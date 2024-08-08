@@ -1,0 +1,773 @@
+---
+title: "ImpactAnalysis_chicago"
+author: "S_17_305"
+date: "2024-01-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Time Series
+```{r}
+library(lubridate)
+library(timetk)
+library(tsibble)
+```
+# Visualization
+
+```{r}
+library(plotly)
+
+library(ggplot2)
+```
+
+# Core
+```{r}
+library(tidyverse)
+library(tidyquant)
+library(data.table)
+
+```
+
+# Model
+```{r}
+library(tidymodels)
+library(modeltime)
+library(modeltime.ensemble)
+```
+
+
+```{r}
+chicago_pre = read.csv("./ChicagoCrimes_-_2001_to_Present.csv (2016-01-01 to 2019-12-31) rows_1068789.csv", header = TRUE)
+```
+
+
+```{r}
+chicago_post = read.csv("./ChicagoCrimes_-_2001_to_Present.csv (2020-01-01 to 2023-08-29) rows_828518.csv", header = TRUE)
+```
+
+```{r}
+dallas_pre =read.csv("./Dallas_2016_to_2019.csv", header = TRUE)
+```
+
+
+```{r}
+dallas_post = read.csv("./Dallas_2020_to_2023.csv", header = TRUE)
+```
+
+```{r}
+phoenix_pre = read.csv("./phoenixCrimedata.csv (2016-01-01 to 2019-12-31) rows_263052.csv", header = TRUE)
+```
+
+```{r}
+phoenix_post = read.csv("./phoenixCrimedata.csv (2020-01-01 to 2023-08-29) rows_228077.csv", header = TRUE)
+```
+
+
+```{r}
+seattle_pre = read.csv("./Seattle_2016 Jan 01 123107 PM_to_2019 Jan 01 120000 AM.csv", header = TRUE)
+```
+
+
+```{r}
+seattle_post = read.csv("./Seattle_2020 Jan 01 120000 AM_to_2023 Jan 01 120000 AM.csv", header = TRUE)
+```
+
+
+
+# Data Preprocessing
+
+
+```{r}
+p_chicago_pre = chicago_pre %>%
+  select(ID, Case.Number, Date , Time, Block, IUCR, Primary.Type, Description, Location.Description, Domestic, Community.Area, FBI.Code, X.Coordinate, Y.Coordinate, Latitude, Longitude, Location, Zip.Codes)
+head(p_chicago_pre,10)
+```
+
+```{r}
+p_chicago_post  = chicago_post %>%
+  select(ID, Case.Number, Date , Time, Block, IUCR, Primary.Type, Description, Location.Description, Domestic, Community.Area, FBI.Code, X.Coordinate, Y.Coordinate, Latitude, Longitude, Location, Zip.Codes)
+head(p_chicago_post,10)
+```
+
+
+```{r}
+up_dallas_pre = dallas_pre %>%
+  select(Incident.Number.w.year, Date1.of.Occurrence, Year.of.Incident, Type.of.Incident, Type..Location, Type.of.Property, Incident.Address, Victim.Gender, UCR.Disposition, Modus.Operandi..MO., Family.Offense, Hate.Crime, Hate.Crime.Description, Weapon.Used, Drug.Related.Istevencident, UCR.Offense.Name, UCR.Offense.Description, UCR.Code, NIBRS.Crime.Category, NIBRS.Code, NIBRS.Type, X.Coordinate, Y.Cordinate, Zip.Code, Location1, Dallas.City.Limits.GIS.Layer)
+head(up_dallas_pre,10)
+```
+
+```{r}
+up_dallas_post = dallas_post %>%
+  select(Incident.Number.w.year, Date1.of.Occurrence, Year.of.Incident, Type.of.Incident, Type..Location, Type.of.Property, Incident.Address, Victim.Gender, UCR.Disposition, Modus.Operandi..MO., Family.Offense, Hate.Crime, Hate.Crime.Description, Weapon.Used, Drug.Related.Istevencident, UCR.Offense.Name, UCR.Offense.Description, UCR.Code, NIBRS.Crime.Category, NIBRS.Code, NIBRS.Type, X.Coordinate, Y.Cordinate, Zip.Code, Location1, Dallas.City.Limits.GIS.Layer)
+head(up_dallas_post,10)
+```
+
+
+```{r}
+up_seattle_pre = seattle_pre %>%
+  select(Report.Number, Offense.ID, Offense.Start.DateTime, Offense.End.DateTime, Report.DateTime, Group.A.B, Crime.Against.Category, Offense.Parent.Group, Offense, Offense.Code,  Precinct, Sector, Beat, MCPP,           X100.Block.Address, Longitude, Latitude)
+head(up_seattle_pre,10)
+```
+
+```{r}
+up_seattle_post = seattle_post %>%
+  select(Report.Number, Offense.ID, Offense.Start.DateTime, Offense.End.DateTime, Report.DateTime, Group.A.B, Crime.Against.Category, Offense.Parent.Group, Offense, Offense.Code,  Precinct, Sector, Beat, MCPP,           X100.Block.Address, Longitude, Latitude)
+head(up_seattle_post,10)
+```
+
+
+```{r}
+up_phoenix_pre = phoenix_pre %>%
+  select(INC.NUMBER, OCCURRED.TO, OCCURRED.ON, UCR.CRIME.CATEGORY, ZIP, PREMISE.TYPE, GRID )
+head(up_phoenix_pre,10)
+```
+
+
+```{r}
+up_phoenix_post = phoenix_post %>%
+  select(INC.NUMBER, OCCURRED.TO, OCCURRED.ON, UCR.CRIME.CATEGORY, ZIP, PREMISE.TYPE, GRID)
+head(up_phoenix_post,10)
+```
+
+```{r}
+missing_values <- colSums(is.na(p_chicago_pre))
+missing_values
+```
+
+```{r}
+missing_values <- colSums(is.na(p_chicago_post))
+missing_values
+```
+
+```{r}
+missing_values <- colSums(is.na(up_dallas_pre))
+missing_values
+```
+```{r}
+missing_values <- colSums(is.na(up_dallas_post))
+missing_values
+```
+
+```{r}
+missing_values <- colSums(is.na(up_seattle_pre))
+missing_values
+```
+
+```{r}
+missing_values <- colSums(is.na(up_seattle_post))
+missing_values
+```
+
+
+```{r}
+missing_values <- colSums(is.na(up_phoenix_pre))
+missing_values
+```
+
+```{r}
+missing_values <- colSums(is.na(up_phoenix_post))
+missing_values
+```
+
+
+```{r}
+str(p_chicago_pre)
+```
+
+```{r}
+# Assuming your dataset is named 'crime_data'
+
+# Convert the 'Date' column to a Date class
+p_chicago_pre$Date <- as.Date(p_chicago_pre$Date)
+
+# Load necessary libraries
+library(dplyr)
+library(lubridate)
+
+# Define the set_time_unit function
+set_time_unit <- function(data, time_unit = "month", .fun = length) {
+  
+  output <- data %>%
+    mutate(Date = floor_date(Date, unit = time_unit)) %>%
+    group_by(Date) %>%
+    summarize(CrimeCount = .fun(ID)) %>%
+    ungroup()
+  
+  return(output)
+}
+
+# Use the set_time_unit function on your crime_data
+crime_monthly <- p_chicago_pre %>%
+  filter(!is.na(Date)) %>%
+  set_time_unit(time_unit = "month")
+
+# Now, you can use the modified 'wti_price_month' code with your crime_data
+crime_monthly %>% 
+  plot_time_series(
+    Date,
+    CrimeCount,
+    .smooth = FALSE,
+    .interactive = TRUE, 
+    .title = "Crime Counts by Month",
+    .x_lab = "Date",
+    .y_lab = "Crime Count",
+    .color_lab = NULL,  # You can modify this based on your preference
+    .plotly_slider = TRUE
+  )
+
+```
+
+
+```{r}
+
+# Convert the 'Date' column to a Date class
+p_chicago_post$Date <- as.Date(p_chicago_post$Date)
+
+
+# Define the set_time_unit function
+set_time_unit <- function(data, time_unit = "month", .fun = length) {
+  
+  output <- data %>%
+    mutate(Date = floor_date(Date, unit = time_unit)) %>%
+    group_by(Date) %>%
+    summarize(CrimeCount = .fun(ID)) %>%
+    ungroup()
+  
+  return(output)
+}
+
+# Use the set_time_unit function on your crime_data
+crime_monthly <- p_chicago_post %>%
+  filter(!is.na(Date)) %>%
+  set_time_unit(time_unit = "month")
+
+# Now, you can use the modified 'wti_price_month' code with your crime_data
+crime_monthly %>% 
+  plot_time_series(
+    Date,
+    CrimeCount,
+    .smooth = FALSE,
+    .interactive = TRUE, 
+    .title = "Crime Counts by Month",
+    .x_lab = "Date",
+    .y_lab = "Crime Count",
+    .color_lab = NULL,  # You can modify this based on your preference
+    .plotly_slider = TRUE
+  )
+
+```
+
+
+
+```{r}
+# Assuming 'chicago_pre' and 'chicago_post' are your datasets
+
+# Load necessary libraries
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# Define the set_time_unit function
+set_time_unit <- function(data, time_unit = "month", .fun = length) {
+  
+  output <- data %>%
+    mutate(Date = floor_date(Date, unit = time_unit)) %>%
+    group_by(Date) %>%
+    summarize(CrimeCount = .fun(ID)) %>%
+    ungroup()
+  
+  return(output)
+}
+
+# Use the set_time_unit function on 'chicago_pre' and 'chicago_post'
+crime_monthly_pre <- p_chicago_pre %>%
+  filter(!is.na(Date)) %>%
+  set_time_unit(time_unit = "month")
+
+crime_monthly_post <- p_chicago_post %>%
+  filter(!is.na(Date)) %>%
+  set_time_unit(time_unit = "month")
+
+# Combine both datasets for plotting
+combined_data <- bind_rows(
+  mutate(crime_monthly_pre, Dataset = "Pre-COVID"),
+  mutate(crime_monthly_post, Dataset = "Post-COVID")
+)
+
+# Plot time series for both datasets with specific colors
+ggplot(combined_data, aes(x = Date, y = CrimeCount, color = Dataset)) +
+  geom_line() +
+  scale_color_manual(values = c("Pre-COVID" = "blue", "Post-COVID" = "red")) +
+  labs(
+    title = "Crime Counts Over Time",
+    x = "Date",
+    y = "Crime Count",
+    color = "Dataset"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+```{r}
+
+# Assuming 'p_chicago_pre' and 'p_chicago_post' are your datasets
+
+# Load necessary libraries
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# Define the set_time_unit function
+set_time_unit <- function(data, time_unit = "month", .fun = length) {
+  
+  output <- data %>%
+    mutate(Date = floor_date(Date, unit = time_unit)) %>%
+    group_by(Date) %>%
+    summarize(CrimeCount = .fun(ID)) %>%
+    ungroup()
+  
+  return(output)
+}
+
+# Use the set_time_unit function on 'p_chicago_pre' and 'p_chicago_post'
+crime_monthly_pre <- p_chicago_pre %>%
+  filter(!is.na(Date)) %>%
+  set_time_unit(time_unit = "month")
+
+crime_monthly_post <- p_chicago_post %>%
+  filter(!is.na(Date)) %>%
+  set_time_unit(time_unit = "month")
+
+# Combine both datasets for plotting
+combined_data <- bind_rows(
+  mutate(crime_monthly_pre, Dataset = "Pre-COVID"),
+  mutate(crime_monthly_post, Dataset = "Post-COVID")
+)
+
+# Plot time series for both datasets with specific colors and vertical lines
+ggplot(combined_data, aes(x = Date, y = CrimeCount, color = Dataset)) +
+  geom_line() +
+  scale_color_manual(values = c("Pre-COVID" = "blue", "Post-COVID" = "red")) +
+  labs(
+    title = "Crime Counts Over Time",
+    x = "Date",
+    y = "Crime Count",
+    color = "Dataset"
+  ) +
+  theme_minimal() +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-01")), linetype = "dashed", color = "black", size = 1) +
+  geom_text(aes(x = as.Date("2020-03-01"), y = max(combined_data$CrimeCount), label = "SAHR-start"), vjust = -0.5, hjust = 0, color = "black") +
+  geom_vline(xintercept = as.numeric(as.Date("2021-03-01")), linetype = "dashed", color = "orange", size = 1) +
+  geom_text(aes(x = as.Date("2021-03-01"), y = max(combined_data$CrimeCount), label = "SAHR-end"), vjust = -0.5, hjust = 0, color = "orange")
+
+```
+
+
+
+
+```{r}
+# Define the set_time_unit function
+set_time_unit <- function(data, time_unit = "month", .fun = length) {
+  
+  output <- data %>%
+    mutate(Date = floor_date(Date, unit = time_unit)) %>%
+    group_by(Date) %>%
+    summarize(CrimeCount = .fun(ID)) %>%
+    ungroup()
+  
+  return(output)
+}
+
+# Use the set_time_unit function on 'p_chicago_pre' and 'p_chicago_post'
+crime_monthly_pre <- p_chicago_pre %>%
+  filter(!is.na(Date)) %>%
+  set_time_unit(time_unit = "month")
+
+crime_monthly_post <- p_chicago_post %>%
+  filter(!is.na(Date)) %>%
+  set_time_unit(time_unit = "month")
+
+# Combine both datasets for plotting
+combined_data <- bind_rows(
+  mutate(crime_monthly_pre, Dataset = "Pre-COVID"),
+  mutate(crime_monthly_post, Dataset = "Post-COVID")
+)
+
+
+
+# Assuming combined_data is your data frame
+ggplot(combined_data, aes(x = Date, y = CrimeCount, color = Dataset)) +
+  geom_line() +
+  scale_color_manual(values = c("Pre-COVID" = "blue", "Post-COVID" = "red")) +
+  labs(
+    title = "Crime Counts Over Time",
+    x = "Date",
+    y = "Crime Count",
+    color = "Dataset"
+  ) +
+  theme_minimal() +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-01")), linetype = "dashed", color = "green", size = 1) +
+  geom_text(aes(x = as.Date("2020-03-01"), y = max(combined_data$CrimeCount), label = "SAHR-start"), vjust = -0.5, hjust = 0, color = "green") +
+  geom_vline(xintercept = as.numeric(as.Date("2021-03-01")), linetype = "dashed", color = "orange", size = 1) +
+  geom_text(aes(x = as.Date("2021-03-01"), y = max(combined_data$CrimeCount), label = "SAHR-end"), vjust = 1.5, hjust = 0, color = "orange")
+
+```
+
+
+
+
+
+```{r}
+str(up_dallas_pre)
+```
+
+
+```{r}
+up_dallas_pre$Date1.of.Occurrence <- sub("\\.0000000$", "", up_dallas_pre$Date1.of.Occurrence)
+```
+
+```{r}
+up_dallas_post$Date1.of.Occurrence <- sub("\\.0000000$", "", up_dallas_post$Date1.of.Occurrence)
+```
+
+
+# Dallas
+
+
+
+```{r}
+set_time_unit <- function(data, time_unit = "month", .fun = length) {
+  
+  output <- data %>%
+    mutate(Date = floor_date(Date, unit = time_unit)) %>%
+    group_by(Date) %>%
+    summarize(CrimeCount = .fun(Incident.Number.w.year)) %>%
+    ungroup()
+  
+  return(output)
+}
+
+# Use the set_time_unit function on 'p_chicago_pre' and 'p_chicago_post'
+crime_monthly_pre <- up_dallas_pre %>%
+  filter(!is.na(Date1.of.Occurrence)) %>%
+  set_time_unit(time_unit = "month")
+
+crime_monthly_post <- up_dallas_post %>%
+  filter(!is.na(Date1.of.Occurrence)) %>%
+  set_time_unit(time_unit = "month")
+
+# Combine both datasets for plotting
+combined_data <- bind_rows(
+  mutate(crime_monthly_pre, Dataset = "Pre-COVID"),
+  mutate(crime_monthly_post, Dataset = "Post-COVID")
+)
+
+
+
+# Assuming combined_data is your data frame
+ggplot(combined_data, aes(x = Date, y = CrimeCount, color = Dataset)) +
+  geom_line() +
+  scale_color_manual(values = c("Pre-COVID" = "blue", "Post-COVID" = "red")) +
+  labs(
+    title = "Crime Counts Over Time",
+    x = "Date",
+    y = "Crime Count",
+    color = "Dataset"
+  ) +
+  theme_minimal() +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-01")), linetype = "dashed", color = "green", size = 1) +
+  geom_text(aes(x = as.Date("2020-03-01"), y = max(combined_data$CrimeCount), label = "SAHR-start"), vjust = -0.5, hjust = 0, color = "green") +
+  geom_vline(xintercept = as.numeric(as.Date("2021-03-01")), linetype = "dashed", color = "orange", size = 1) +
+  geom_text(aes(x = as.Date("2021-03-01"), y = max(combined_data$CrimeCount), label = "SAHR-end"), vjust = 1.5, hjust = 0, color = "orange")
+```
+
+
+
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+# Convert Date1.of.Occurrence to Date class
+up_dallas_pre$Date1.of.Occurrence <- as.Date(up_dallas_pre$Date1.of.Occurrence)
+up_dallas_post$Date1.of.Occurrence <- as.Date(up_dallas_post$Date1.of.Occurrence)
+
+# Define the set_time_unit function
+set_time_unit <- function(data, time_unit = "month", .fun = length) {
+  
+  output <- data %>%
+    mutate(Date1.of.Occurrence = floor_date(as.Date(Date1.of.Occurrence), unit = time_unit)) %>%
+    group_by(Date1.of.Occurrence) %>%
+    summarize(CrimeCount = .fun(Incident.Number.w.year)) %>%
+    ungroup()
+  
+  return(output)
+}
+
+# Use the set_time_unit function on 'up_dallas_pre' and 'up_dallas_post'
+crime_monthly_pre <- up_dallas_pre %>%
+  filter(!is.na(Date1.of.Occurrence)) %>%
+  set_time_unit(time_unit = "month") %>%
+  filter(Date1.of.Occurrence >= as.Date("2016-01-01") & Date1.of.Occurrence <= as.Date("2019-12-31"))
+
+crime_monthly_post <- up_dallas_post %>%
+  filter(!is.na(Date1.of.Occurrence)) %>%
+  set_time_unit(time_unit = "month") %>%
+  filter(Date1.of.Occurrence >= as.Date("2020-01-01") & Date1.of.Occurrence <= as.Date("2023-08-31"))
+
+# Combine both datasets for plotting
+combined_data <- bind_rows(
+  mutate(crime_monthly_pre, Dataset = "Pre-COVID"),
+  mutate(crime_monthly_post, Dataset = "Post-COVID")
+)
+
+# Plot time series for both datasets with specific colors and vertical lines
+ggplot(combined_data, aes(x = Date1.of.Occurrence, y = CrimeCount, color = Dataset)) +
+  geom_line() +
+  scale_color_manual(values = c("Pre-COVID" = "blue", "Post-COVID" = "red")) +
+  labs(
+    title = "Crime Counts Over Time",
+    x = "Date",  # Adjust the x-axis label
+    y = "Crime Count",
+    color = "Dataset"
+  ) +
+  theme_minimal() +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-01")), linetype = "dashed", color = "green", size = 1) +
+  geom_text(aes(x = as.Date("2020-03-01"), y = max(combined_data$CrimeCount), label = "SAHR-start"), vjust = -0.5, hjust = 0, color = "green") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-09-01")), linetype = "dashed", color = "orange", size = 1) +
+  geom_text(aes(x = as.Date("2020-09-01"), y = max(combined_data$CrimeCount), label = "SAHR-end"), vjust = 1.5, hjust = 0, color = "orange") +
+  scale_x_date(limits = as.Date(c("2016-01-01", "2023-08-31")), date_labels = "%Y", date_breaks = "1 year")
+
+
+```
+
+
+```{r}
+str(up_seattle_pre)
+```
+
+
+
+
+```{r}
+
+# Convert the "Offense.Start.DateTime" column to POSIXct format
+up_seattle_pre$ Offense.Start.DateTime  <- as.POSIXct(up_seattle_pre$ Offense.Start.DateTime , format = "%m/%d/%Y %I:%M:%S %p", tz = "UTC")
+up_seattle_post$ Offense.Start.DateTime  <- as.POSIXct(up_seattle_post$ Offense.Start.DateTime , format = "%m/%d/%Y %I:%M:%S %p", tz = "UTC")
+# Convert Date1.of.Occurrence to Date class
+up_seattle_pre$Offense.Start.DateTime <- as.Date(up_seattle_pre$Offense.Start.DateTime)
+up_seattle_post$Offense.Start.DateTime <- as.Date(up_seattle_post$Offense.Start.DateTime)
+
+
+
+# Define the set_time_unit function
+set_time_unit <- function(data, time_unit = "month", .fun = length) {
+  
+  output <- data %>%
+    mutate(Offense.Start.DateTime = floor_date(as.Date(Offense.Start.DateTime), unit = time_unit)) %>%
+    group_by(Offense.Start.DateTime) %>%
+    summarize(CrimeCount = .fun(Report.Number )) %>%
+    ungroup()
+  
+  return(output)
+}
+
+# Use the set_time_unit function on 'up_dallas_pre' and 'up_dallas_post'
+crime_monthly_pre <- up_seattle_pre %>%
+  filter(!is.na(Offense.Start.DateTime)) %>%
+  set_time_unit(time_unit = "month") %>%
+  filter(Offense.Start.DateTime >= as.Date("2016-01-01") & Offense.Start.DateTime <= as.Date("2019-12-31"))
+
+crime_monthly_post <- up_seattle_post %>%
+  filter(!is.na(Offense.Start.DateTime)) %>%
+  set_time_unit(time_unit = "month") %>%
+  filter(Offense.Start.DateTime >= as.Date("2020-01-01") & Offense.Start.DateTime <= as.Date("2023-08-31"))
+
+# Combine both datasets for plotting
+combined_data <- bind_rows(
+  mutate(crime_monthly_pre, Dataset = "Pre-COVID"),
+  mutate(crime_monthly_post, Dataset = "Post-COVID")
+)
+
+# Plot time series for both datasets with specific colors and vertical lines
+ggplot(combined_data, aes(x = Offense.Start.DateTime, y = CrimeCount, color = Dataset)) +
+  geom_line() +
+  scale_color_manual(values = c("Pre-COVID" = "blue", "Post-COVID" = "red")) +
+  labs(
+    title = "Crime Counts Over Time",
+    x = "Year",  # Adjust the x-axis label
+    y = "Crime Count",
+    color = "Dataset"
+  ) +
+  theme_minimal() +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-01")), linetype = "dashed", color = "green", size = 1) +
+  geom_text(aes(x = as.Date("2020-03-01"), y = max(combined_data$CrimeCount), label = "SAHR-start"), vjust = -0.5, hjust = 0, color = "green") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-09-01")), linetype = "dashed", color = "orange", size = 1) +
+  geom_text(aes(x = as.Date("2020-09-01"), y = max(combined_data$CrimeCount), label = "SAHR-end"), vjust = 1.5, hjust = 0, color = "orange") +
+  scale_x_date(limits = as.Date(c("2016-01-01", "2023-08-31")), date_labels = "%Y", date_breaks = "1 year")
+
+
+```
+
+```{r}
+str(up_phoenix_pre)
+```
+
+
+```{r}
+
+# Convert the "Offense.Start.DateTime" column to POSIXct format
+up_phoenix_pre$OCCURRED.ON <- as.Date(up_phoenix_pre$OCCURRED.ON, format = "%Y-%m-%d")
+up_phoenix_post$ OCCURRED.ON  <- as.Date(up_phoenix_post$ OCCURRED.ON , format = "%Y-%m-%d")
+# Convert Date1.of.Occurrence to Date class
+up_phoenix_pre$OCCURRED.ON <- as.Date(up_phoenix_pre$OCCURRED.ON)
+up_phoenix_post$OCCURRED.ON <- as.Date(up_phoenix_post$OCCURRED.ON)
+
+
+
+# Define the set_time_unit function
+set_time_unit <- function(data, time_unit = "month", .fun = length) {
+  
+  output <- data %>%
+    mutate(OCCURRED.ON = floor_date(as.Date(OCCURRED.ON), unit = time_unit)) %>%
+    group_by(OCCURRED.ON) %>%
+    summarize(CrimeCount = .fun(INC.NUMBER )) %>%
+    ungroup()
+  
+  return(output)
+}
+
+# Use the set_time_unit function on 'up_dallas_pre' and 'up_dallas_post'
+crime_monthly_pre <- up_phoenix_pre %>%
+  filter(!is.na(OCCURRED.ON)) %>%
+  set_time_unit(time_unit = "month") %>%
+  filter(OCCURRED.ON >= as.Date("2016-01-01") & OCCURRED.ON <= as.Date("2019-12-31"))
+
+crime_monthly_post <- up_phoenix_post %>%
+  filter(!is.na(OCCURRED.ON)) %>%
+  set_time_unit(time_unit = "month") %>%
+  filter(OCCURRED.ON >= as.Date("2020-01-01") & OCCURRED.ON <= as.Date("2023-08-31"))
+
+# Combine both datasets for plotting
+combined_data <- bind_rows(
+  mutate(crime_monthly_pre, Dataset = "Pre-COVID"),
+  mutate(crime_monthly_post, Dataset = "Post-COVID")
+)
+
+# Plot time series for both datasets with specific colors and vertical lines
+ggplot(combined_data, aes(x = OCCURRED.ON, y = CrimeCount, color = Dataset)) +
+  geom_line() +
+  scale_color_manual(values = c("Pre-COVID" = "blue", "Post-COVID" = "red")) +
+  labs(
+    title = "Crime Counts Over Time",
+    x = "Date",  # Adjust the x-axis label
+    y = "Crime Count",
+    color = "Dataset"
+  ) +
+  theme_minimal() +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-01")), linetype = "dashed", color = "green", size = 1) +
+  geom_text(aes(x = as.Date("2020-03-01"), y = max(combined_data$CrimeCount), label = "SAHR-start"), vjust = -0.5, hjust = 0, color = "green") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-09-01")), linetype = "dashed", color = "orange", size = 1) +
+  geom_text(aes(x = as.Date("2020-09-01"), y = max(combined_data$CrimeCount), label = "SAHR-end"), vjust = 1.5, hjust = 0, color = "orange") +
+  scale_x_date(limits = as.Date(c("2016-01-01", "2023-08-31")), date_labels = "%Y", date_breaks = "1 year")
+
+```
+
+
+
+
+
+
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+crime_monthly <- p_chicago_post %>%
+  filter(!is.na(Date)) %>%
+  set_time_unit(time_unit = "month")
+
+
+crime_monthly %>%
+  tk_time_series_cv_plan() %>%
+  plot_time_series_cv_plan(
+    Date, 
+    Value, 
+    .interactive = T, 
+    .title = "WTI Oil Production",
+    .x_lab = "Date",
+    .y_lab = "WTI Oil Production (kbbl)",
+    .plotly_slider = T
+  )
+```
+
+
+```{r}
+chicago_data <- bind_rows(
+  mutate(p_chicago_pre, split = "train"),
+  mutate(p_chicago_post, split = "test")
+)
+
+# Convert 'Date' to a Date type
+chicago_data$Date <- as.Date(chicago_data$Date)
+
+# Define time series cross-validation plan
+cv_plan_chicago <- initial_time_split(chicago_data, prop = 0.8)
+
+# Visualize the time series cross-validation plan
+cv_plan_chicago %>%
+  plot_time_series_cv_plan(
+    Date, 
+    Primary.Type,  # Replace with the actual column name for crime categories
+    .interactive = TRUE, 
+    .title = "Chicago Crime Categories Over Time",
+    .x_lab = "Date",
+    .y_lab = "Crime Categories",
+    .plotly_slider = TRUE
+  )
+
+```
+
+
+
+
+
+############################################################################
+
+
+
+```{r}
+# Install and load necessary libraries
+install.packages(c( "zoo", "forecast"))
+library(tidyverse)
+library(zoo)
+library(forecast)
+
+```
+
+
+
+
+
+```{r}
+# Create time series objects for pre and post datasets
+chicago_ts_pre <- zoo(p_chicago_pre$Count, order.by = chicago_pre$Date)
+chicago_ts_post <- zoo(p_chicago_post$Count, order.by = chicago_post$Date)
+
+```
+```{r}
+# Plot time series data
+plot(chicago_ts_pre, col = "blue", main = "Crime Incidents Over Time", ylab = "Count", xlab = "Date")
+lines(chicago_ts_post, col = "red")
+legend("topright", legend = c("Pre-COVID", "Post-COVID"), col = c("blue", "red"), lty = 1)
+
+```
+

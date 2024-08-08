@@ -1,0 +1,3304 @@
+---
+title: "R_Preliminary_Analysis"
+author: "S_17_305"
+date: "2023-09-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(ggmap)
+library(ggplot2)
+library(tibble)
+library(lubridate)
+library(chron)
+library(dplyr)
+library(tidyverse)
+library(sp)
+```
+
+
+
+
+
+
+
+
+```{r}
+chicago_pre = read.csv("./CrimeDatasets/newData/ChicagoCrimes_-_2001_to_Present.csv (2016-01-01 to 2019-12-31) rows_1068789.csv", header = TRUE)
+```
+
+
+```{r}
+chicago_post = read.csv("./CrimeDatasets/newData/ChicagoCrimes_-_2001_to_Present.csv (2020-01-01 to 2023-08-29) rows_828518.csv", header = TRUE)
+```
+
+
+```{r}
+dallas_pre =read.csv("./CrimeDatasets/newData/Dallas_2016_to_2019.csv", header = TRUE)
+```
+
+```{r}
+dallas_post = read.csv("./CrimeDatasets/newData/Dallas_2020_to_2023.csv", header = TRUE)
+```
+
+########LosangalesNOT#################
+```{r}
+losAngalese_pre = read.csv("./CrimeDatasets/newData/LA_2016 Jan 01 120000 AM_to_2019 Jan 01 120000 AM.csv", header = TRUE)
+```
+
+
+```{r}
+losAngalese_post = read.csv("./CrimeDatasets/newData/LA_2020 Jan 01 120000 AM_to_2023 Sep 07 072946 PM.csv", header = TRUE)
+```
+
+
+```{r}
+phoenix_pre = read.csv("./CrimeDatasets/newData/phoenixCrimedata.csv (2016-01-01 to 2019-12-31) rows_263052.csv", header = TRUE)
+```
+
+
+```{r}
+phoenix_post = read.csv("./CrimeDatasets/newData/phoenixCrimedata.csv (2020-01-01 to 2023-08-29) rows_228077.csv", header = TRUE)
+```
+
+```{r}
+seattle_pre = read.csv("./CrimeDatasets/newData/Seattle_2016 Jan 01 123107 PM_to_2019 Jan 01 120000 AM.csv", header = TRUE)
+```
+
+
+```{r}
+seattle_post = read.csv("./CrimeDatasets/newData/Seattle_2020 Jan 01 120000 AM_to_2023 Jan 01 120000 AM.csv", header = TRUE)
+```
+
+
+
+
+
+```{r}
+View(chicago_pre)
+```
+
+
+```{r}
+view(chicago_post)
+```
+
+
+
+
+```{r}
+View(dallas_pre)
+```
+
+
+```{r}
+View(losAngalese_pre)
+```
+
+```{r}
+View(phoenix_pre)
+```
+
+
+```{r}
+View(seattle_pre)
+```
+
+
+```{r}
+colnames(chicago_pre)
+```
+```{r}
+colnames(dallas_pre)
+```
+
+```{r}
+colnames(losAngalese_pre)
+```
+
+```{r}
+colnames(phoenix_pre)
+```
+
+```{r}
+colnames(seattle_pre)
+```
+
+
+
+
+```{r}
+up_chicago_pre = chicago_pre %>%
+  select(ID, Case.Number, Date , Time, Block, IUCR, Primary.Type, Description, Location.Description, Domestic, Community.Area, FBI.Code, X.Coordinate, Y.Coordinate, Latitude, Longitude, Location, Zip.Codes)
+head(up_chicago_pre,10)
+```
+
+
+
+```{r}
+up_chicago_post = chicago_post %>%
+  select(ID, Case.Number, Date , Time, Block, IUCR, Primary.Type, Description, Location.Description, Domestic, Community.Area, FBI.Code, X.Coordinate, Y.Coordinate, Latitude, Longitude, Location, Zip.Codes)
+head(up_chicago_post,10)
+```
+
+```{r}
+up_dallas_pre = dallas_pre %>%
+  select(Incident.Number.w.year, Date1.of.Occurrence, Year.of.Incident, Type.of.Incident, Type..Location, Type.of.Property, Incident.Address, Victim.Gender, UCR.Disposition, Modus.Operandi..MO., Family.Offense, Hate.Crime, Hate.Crime.Description, Weapon.Used, Drug.Related.Istevencident, UCR.Offense.Name, UCR.Offense.Description, UCR.Code, NIBRS.Crime.Category, NIBRS.Code, NIBRS.Type, X.Coordinate, Y.Cordinate, Zip.Code, Location1, Dallas.City.Limits.GIS.Layer)
+head(up_dallas_pre,10)
+
+```
+
+```{r}
+up_dallas_post = dallas_post %>%
+  select(Incident.Number.w.year, Date1.of.Occurrence, Year.of.Incident, Type.of.Incident, Type..Location, Type.of.Property, Incident.Address, Victim.Gender, UCR.Disposition, Modus.Operandi..MO., Family.Offense, Hate.Crime, Hate.Crime.Description, Weapon.Used, Drug.Related.Istevencident, UCR.Offense.Name, UCR.Offense.Description, UCR.Code, NIBRS.Crime.Category, NIBRS.Code, NIBRS.Type, X.Coordinate, Y.Cordinate, Zip.Code, Location1, Dallas.City.Limits.GIS.Layer)
+head(up_dallas_post,10)
+```
+
+#removing .0000000 from date-time 
+
+```{r}
+up_dallas_pre$Date1.of.Occurrence <- sub("\\.0000000$", "", up_dallas_pre$Date1.of.Occurrence)
+
+```
+
+```{r}
+up_dallas_post$Date1.of.Occurrence <- sub("\\.0000000$", "", up_dallas_post$Date1.of.Occurrence)
+```
+
+
+```{r}
+# Load the dplyr package
+library(dplyr)
+
+# Convert Date1.of.Occurrence to a datetime object
+up_dallas_pre$Date1.of.Occurrence <- as.POSIXct(up_dallas_pre$Date1.of.Occurrence, format = "%Y-%m-%d %H:%M:%S")
+
+# Filter the data for the specified date range
+up_dallas_pre <- up_dallas_pre %>% 
+  filter(Date1.of.Occurrence >= as.POSIXct("2016-01-01 00:00:00", format = "%Y-%m-%d %H:%M:%S") &
+         Date1.of.Occurrence <= as.POSIXct("2019-12-31 00:00:00", format = "%Y-%m-%d %H:%M:%S"))
+
+# View the filtered data
+head(up_dallas_pre,10)
+
+```
+
+
+
+
+```{r}
+# Convert Date1.of.Occurrence to a datetime object
+up_dallas_post$Date1.of.Occurrence <- as.POSIXct(up_dallas_post$Date1.of.Occurrence, format = "%Y-%m-%d %H:%M:%S")
+
+# Filter the data for the specified date range
+up_dallas_post <- up_dallas_post %>% 
+  filter(Date1.of.Occurrence >= as.POSIXct("2020-01-01 00:00:00", format = "%Y-%m-%d %H:%M:%S") &
+         Date1.of.Occurrence <= as.POSIXct("2023-08-31 00:00:00", format = "%Y-%m-%d %H:%M:%S"))
+
+# View the filtered data
+head(up_dallas_post,10)
+```
+
+
+
+
+
+
+
+```{r}
+up_phoenix_pre = phoenix_pre %>%
+  select(INC.NUMBER, OCCURRED.TO, OCCURRED.ON, UCR.CRIME.CATEGORY, ZIP, PREMISE.TYPE, GRID )
+head(up_phoenix_pre,10)
+```
+
+```{r}
+up_phoenix_post = phoenix_post %>%
+  select(INC.NUMBER, OCCURRED.TO, OCCURRED.ON, UCR.CRIME.CATEGORY, ZIP, PREMISE.TYPE, GRID)
+head(up_phoenix_post,10)
+```
+
+
+
+```{r}
+tail(unique(seattle_post$Offense.Start.DateTime))
+```
+
+
+
+
+```{r}
+up_seattle_pre = seattle_pre %>%
+  select(Report.Number, Offense.ID, Offense.Start.DateTime, Offense.End.DateTime, Report.DateTime, Group.A.B, Crime.Against.Category, Offense.Parent.Group, Offense, Offense.Code,  Precinct, Sector, Beat, MCPP,           X100.Block.Address, Longitude, Latitude)
+head(up_seattle_pre,10)
+```
+
+
+```{r}
+up_seattle_post = seattle_post %>%
+  select(Report.Number, Offense.ID, Offense.Start.DateTime, Offense.End.DateTime, Report.DateTime, Group.A.B, Crime.Against.Category, Offense.Parent.Group, Offense, Offense.Code,  Precinct, Sector, Beat, MCPP,           X100.Block.Address, Longitude, Latitude)
+head(up_seattle_post,10)
+```
+
+
+```{r}
+missing_values <- colSums(is.na(up_chicago_pre))
+missing_values
+```
+
+
+```{r}
+missing_values <- colSums(is.na(up_chicago_post))
+missing_values
+```
+
+
+
+```{r}
+missing_values <- colSums(is.na(up_dallas_pre))
+missing_values
+```
+
+```{r}
+missing_values <- colSums(is.na(up_dallas_post))
+missing_values
+```
+
+
+
+```{r}
+missing_values <- colSums(is.na(up_phoenix_pre))
+missing_values
+```
+
+```{r}
+missing_values <- colSums(is.na(up_phoenix_post))
+missing_values
+```
+```{r}
+missing_values <- colSums(is.na(up_seattle_pre))
+missing_values
+```
+
+```{r}
+missing_values <- colSums(is.na(up_seattle_post))
+missing_values
+```
+
+
+
+
+#Creating/Reformatting Date columns in chicago pre
+
+
+
+```{r}
+up_chicago_pre$Date <- as.POSIXct(up_chicago_pre$Date, format = "%Y-%m-%d")
+up_chicago_pre$Time <- times(up_chicago_pre$Time)
+up_chicago_pre$DayOfWeek <- weekdays(up_chicago_pre$Date)
+up_chicago_pre$Month <- months(as.Date(up_chicago_pre$Date))
+
+up_chicago_pre$Date <- as.POSIXct(strptime(up_chicago_pre$Date, format = "%Y-%m-%d"))
+```
+
+
+
+#Creating/Reformatting Date columns in chicago post
+
+```{r}
+up_chicago_post$Date <- as.POSIXct(up_chicago_post$Date, format = "%Y-%m-%d")
+up_chicago_post$Time <- times(up_chicago_post$Time)
+up_chicago_post$DayOfWeek <- weekdays(up_chicago_post$Date)
+up_chicago_post$Month <- months(as.Date(up_chicago_post$Date))
+
+up_chicago_post$Date <- as.POSIXct(strptime(up_chicago_post$Date, format = "%Y-%m-%d"))
+```
+
+
+
+#Creating/Reformatting Date columns in Dallas Pre
+
+```{r}
+up_dallas_pre$Date1.of.Occurrence <- as.POSIXct(up_dallas_pre$Date1.of.Occurrence, format = "%Y-%m-%d %H:%M:%S")
+up_dallas_pre$Time <- times(format(up_dallas_pre$Date1.of.Occurrence, " %H:%M:%S"))
+up_dallas_pre$Date1.of.Occurrence <- as.Date(up_dallas_pre$Date1.of.Occurrence)
+#up_dallas_pre$DayOfWeek <- wday(up_dallas_pre$Date1.of.Occurrence, label = TRUE)
+weekday_numbers <- weekdays(up_dallas_post$Date1.of.Occurrence)
+# If you want to get the weekday names as labels, you can use weekdays()
+up_dallas_pre$DayOfWeek <- weekdays(up_dallas_pre$Date1.of.Occurrence)
+up_dallas_pre$Month <- months(up_dallas_pre$Date1.of.Occurrence)
+
+```
+
+
+
+```{r}
+library(lubridate)
+```
+
+
+#Creating/Reformatting Date columns in Dallas Post
+
+```{r}
+up_dallas_post$Date1.of.Occurrence <- as.POSIXct(up_dallas_post$Date1.of.Occurrence, format = "%Y-%m-%d %H:%M:%S")
+up_dallas_post$Time <- times(format(up_dallas_post$Date1.of.Occurrence, " %H:%M:%S"))
+up_dallas_post$Date1.of.Occurrence <- as.Date(up_dallas_post$Date1.of.Occurrence)
+up_dallas_post$DayOfWeek <- weekdays(up_dallas_post$Date1.of.Occurrence)
+up_dallas_post$Month <- months(up_dallas_post$Date1.of.Occurrence)
+```
+
+
+#Time*******
+
+
+
+
+
+
+
+#Time *********
+
+
+
+
+
+```{r}
+str(up_chicago_pre)
+```
+
+
+
+```{r}
+up_phoenix_pre$OCCURRED.ON <- as.Date(up_phoenix_pre$OCCURRED.ON, format = "%Y-%m-%d")
+up_phoenix_pre$DayOfWeek <- weekdays(up_phoenix_pre$OCCURRED.ON)
+up_phoenix_pre$Month <- months(up_phoenix_pre$OCCURRED.ON)
+```
+
+
+```{r}
+up_phoenix_post$OCCURRED.ON <- as.Date(up_phoenix_post$OCCURRED.ON, format = "%Y-%m-%d")
+up_phoenix_post$DayOfWeek <- weekdays(up_phoenix_post$OCCURRED.ON)
+up_phoenix_post$Month <- months(up_phoenix_post$OCCURRED.ON)
+```
+
+
+
+
+```{r}
+str(up_seattle_pre)
+```
+
+```{r}
+
+
+# Convert "Offense.Start.DateTime" to POSIXct format
+up_seattle_pre$Offense.Start.DateTime <- as.POSIXct(up_seattle_pre$Offense.Start.DateTime, format = "%m/%d/%Y %I:%M:%S %p")
+
+# Extract the time portion and store it in a new column "Time"
+up_seattle_pre$Time <- times(format(up_seattle_pre$Offense.Start.DateTime, " %H:%M:%S"))
+
+# Convert "Offense.Start.DateTime" back to Date format
+up_seattle_pre$Offense.Start.DateTime <- as.Date(up_seattle_pre$Offense.Start.DateTime)
+
+# Extract the day of the week and store it in a new column "DayOfWeek"
+up_seattle_pre$DayOfWeek <- weekdays(up_seattle_pre$Offense.Start.DateTime)
+
+# Extract the month and store it in a new column "Month"
+up_seattle_pre$Month <- months(up_seattle_pre$Offense.Start.DateTime)
+
+# Now, your_data contains the new columns "Time," "DayOfWeek," and "Month" based on "Offense.Start.DateTime."
+
+```
+
+
+```{r}
+# Convert "Offense.Start.DateTime" to POSIXct format
+up_seattle_post$Offense.Start.DateTime <- as.POSIXct(up_seattle_post$Offense.Start.DateTime, format = "%m/%d/%Y %I:%M:%S %p")
+
+# Extract the time portion and store it in a new column "Time"
+up_seattle_post$Time <- times(format(up_seattle_post$Offense.Start.DateTime, " %H:%M:%S"))
+
+# Convert "Offense.Start.DateTime" back to Date format
+up_seattle_post$Offense.Start.DateTime <- as.Date(up_seattle_post$Offense.Start.DateTime)
+
+# Extract the day of the week and store it in a new column "DayOfWeek"
+up_seattle_post$DayOfWeek <- weekdays(up_seattle_post$Offense.Start.DateTime)
+
+# Extract the month and store it in a new column "Month"
+up_seattle_post$Month <- months(up_seattle_post$Offense.Start.DateTime)
+
+# Now, your_data contains the new columns "Time," "DayOfWeek," and "Month" based on "Offense.Start.DateTime."
+
+```
+
+
+
+```{r}
+unique(up_chicago_pre$Primary.Type)
+```
+
+
+
+```{r}
+unique(up_chicago_post$Primary.Type)
+```
+
+
+
+```{r}
+# Assuming dataset1 and dataset2 are your two data frames
+# Assuming you want the top 10 crime types from the combined dataset
+
+# Load the required library
+library(dplyr)
+
+# Bind the two datasets vertically
+combined_data <- bind_rows(up_chicago_pre, up_chicago_post)
+
+# Get the top 10 crime types by counting the occurrences
+top_crime_types <- combined_data %>%
+  group_by(Primary.Type) %>%
+  summarize(Count = n()) %>%
+  arrange(desc(Count)) %>%
+  head(10)
+
+# Print the top 10 crime types
+print(top_crime_types)
+
+```
+
+
+
+
+```{r}
+# Assuming dataset1 and dataset2 are your two data frames
+# Assuming you want the top 10 crime types from the combined dataset
+
+# Load the required library
+
+# Bind the two datasets vertically
+combined_data <- bind_rows(up_dallas_pre, up_dallas_post)
+
+# Get the top 10 crime types by counting the occurrences
+top_crime_types <- combined_data %>%
+  group_by(NIBRS.Crime.Category) %>%
+  summarize(Count = n()) %>%
+  arrange(desc(Count)) %>%
+  head(10)
+
+# Print the top 10 crime types
+print(top_crime_types)
+```
+
+
+```{r}
+combined_data <- bind_rows(up_seattle_pre, up_seattle_post)
+
+# Get the top 10 crime types by counting the occurrences
+top_crime_types <- combined_data %>%
+  group_by(Offense.Parent.Group) %>%
+  summarize(Count = n()) %>%
+  arrange(desc(Count)) %>%
+  head(10)
+
+# Print the top 10 crime types
+print(top_crime_types)
+```
+```{r}
+colnames(up_phoenix_post)
+```
+
+
+```{r}
+combined_data <- bind_rows(up_phoenix_post, up_phoenix_post)
+
+# Get the top 10 crime types by counting the occurrences
+top_crime_types <- combined_data %>%
+  group_by(UCR.CRIME.CATEGORY) %>%
+  summarize(Count = n()) %>%
+  arrange(desc(Count)) %>%
+  head(10)
+
+# Print the top 10 crime types
+print(top_crime_types)
+```
+
+
+
+```{r}
+chi_pre_crime_counts = table(up_chicago_pre$Primary.Type)
+chi_pre_crime_counts = chi_pre_crime_counts[order(chi_pre_crime_counts, decreasing = T)]
+print(chi_pre_crime_counts[1:34])
+```
+
+```{r}
+library(knitr)
+kable(chi_pre_crime_counts, format = "markdown")
+```
+
+
+
+
+#Chicago Pre
+```{r}
+# Assuming your data frame is named 'crime_data'
+# Install the dplyr package if you haven't already installed it
+# install.packages("dplyr")
+
+# Load the dplyr package
+library(dplyr)
+
+# Convert Date to year-month for grouping
+up_chicago_pre$YearMonth <- format(up_chicago_pre$Date, "%Y-%m-%d")
+
+# Group by year-month and crime type, calculate crime counts
+crime_counts <- up_chicago_pre %>%
+  group_by(YearMonth, Primary.Type) %>%
+  summarize(Count = n())
+
+# Select the top 10 crime types overall
+top_crime_types <- crime_counts %>%
+  group_by(Primary.Type, YearMonth) %>%
+  summarize(TotalCount = sum(Count)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) %>%
+  pull(Primary.Type)
+
+# Filter data for the top 10 crime types
+filtered_data <- crime_counts %>%
+  filter(Primary.Type %in% top_crime_types)
+
+# Calculate descriptive statistics for each crime type
+crime_statistics <- filtered_data %>%
+  group_by(Primary.Type) %>%
+  summarize(
+    Mean = mean(Count),
+    SD = sd(Count),
+    Min = min(Count),
+    Max = max(Count),
+    TotalCount = sum(Count)
+      
+  )
+
+fn_table = crime_statistics %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) 
+  
+
+# Print the result
+print(fn_table)
+
+```
+
+
+
+
+#Chicago Post
+```{r}
+up_chicago_post$YearMonth <- format(up_chicago_post$Date, "%Y-%m-%d")
+
+# Group by year-month and crime type, calculate crime counts
+crime_counts <- up_chicago_post %>%
+  group_by(YearMonth, Primary.Type) %>%
+  summarize(Count = n())
+
+# Select the top 10 crime types overall
+top_crime_types <- crime_counts %>%
+  group_by(Primary.Type, YearMonth) %>%
+  summarize(TotalCount = sum(Count)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) %>%
+  pull(Primary.Type)
+
+# Filter data for the top 10 crime types
+filtered_data <- crime_counts %>%
+  filter(Primary.Type %in% top_crime_types)
+
+# Calculate descriptive statistics for each crime type
+crime_statistics <- filtered_data %>%
+  group_by(Primary.Type) %>%
+  summarize(
+    Mean = mean(Count),
+    SD = sd(Count),
+    Min = min(Count),
+    Max = max(Count),
+    TotalCount = sum(Count)
+      
+  )
+
+fn_table = crime_statistics %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) 
+  
+
+# Print the result
+print(fn_table)
+```
+
+
+
+
+
+
+
+#Dallas Pre
+```{r}
+up_dallas_pre$YearMonthDate <- format(up_dallas_pre$Date1.of.Occurrence, "%Y-%m-%d")
+
+# Group by year-month and crime type, calculate crime counts
+crime_counts <- up_dallas_pre %>%
+  group_by(YearMonthDate, NIBRS.Crime.Category) %>%
+  summarize(Count = n())
+
+# Select the top 10 crime types overall
+top_crime_types <- crime_counts %>%
+  group_by(NIBRS.Crime.Category, YearMonthDate) %>%
+  summarize(TotalCount = sum(Count)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) %>%
+  pull(NIBRS.Crime.Category)
+
+# Filter data for the top 10 crime types
+filtered_data <- crime_counts %>%
+  filter(NIBRS.Crime.Category %in% top_crime_types)
+
+# Calculate descriptive statistics for each crime type
+crime_statistics <- filtered_data %>%
+  group_by(NIBRS.Crime.Category) %>%
+  summarize(
+    Mean = mean(Count),
+    SD = sd(Count),
+    Min = min(Count),
+    Max = max(Count),
+    TotalCount = sum(Count)
+      
+  )
+
+fn_table = crime_statistics %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) 
+  
+
+# Print the result
+print(fn_table)
+```
+
+
+
+#Dallas Post
+```{r}
+up_dallas_post$YearMonthDate <- format(up_dallas_post$Date1.of.Occurrence, "%Y-%m-%d")
+
+# Group by year-month and crime type, calculate crime counts
+crime_counts <- up_dallas_post %>%
+  group_by(YearMonthDate, NIBRS.Crime.Category) %>%
+  summarize(Count = n())
+
+# Select the top 10 crime types overall
+top_crime_types <- crime_counts %>%
+  group_by(NIBRS.Crime.Category, YearMonthDate) %>%
+  summarize(TotalCount = sum(Count)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) %>%
+  pull(NIBRS.Crime.Category)
+
+# Filter data for the top 10 crime types
+filtered_data <- crime_counts %>%
+  filter(NIBRS.Crime.Category %in% top_crime_types)
+
+# Calculate descriptive statistics for each crime type
+crime_statistics <- filtered_data %>%
+  group_by(NIBRS.Crime.Category) %>%
+  summarize(
+    Mean = mean(Count),
+    SD = sd(Count),
+    Min = min(Count),
+    Max = max(Count),
+    TotalCount = sum(Count)
+      
+  )
+
+fn_table = crime_statistics %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) 
+  
+
+# Print the result
+print(fn_table)
+```
+
+
+
+
+
+
+#Seattle Pre
+```{r}
+up_seattle_pre$YearMonthDate <- format(up_seattle_pre$Offense.Start.DateTime, "%Y-%m-%d")
+
+# Group by year-month and crime type, calculate crime counts
+crime_counts <- up_seattle_pre %>%
+  group_by(YearMonthDate, Offense.Parent.Group) %>%
+  summarize(Count = n())
+
+# Select the top 10 crime types overall
+top_crime_types <- crime_counts %>%
+  group_by(Offense.Parent.Group, YearMonthDate) %>%
+  summarize(TotalCount = sum(Count)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) %>%
+  pull(Offense.Parent.Group)
+
+# Filter data for the top 10 crime types
+filtered_data <- crime_counts %>%
+  filter(Offense.Parent.Group %in% top_crime_types)
+
+# Calculate descriptive statistics for each crime type
+crime_statistics <- filtered_data %>%
+  group_by(Offense.Parent.Group) %>%
+  summarize(
+    Mean = mean(Count),
+    SD = sd(Count),
+    Min = min(Count),
+    Max = max(Count),
+    TotalCount = sum(Count)
+      
+  )
+
+fn_table = crime_statistics %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) 
+  
+
+# Print the result
+print(fn_table)
+```
+
+
+#Seattle Post
+```{r}
+up_seattle_post$YearMonthDate <- format(up_seattle_post$Offense.Start.DateTime, "%Y-%m-%d")
+
+# Group by year-month and crime type, calculate crime counts
+crime_counts <- up_seattle_post %>%
+  group_by(YearMonthDate, Offense.Parent.Group) %>%
+  summarize(Count = n())
+
+# Select the top 10 crime types overall
+top_crime_types <- crime_counts %>%
+  group_by(Offense.Parent.Group, YearMonthDate) %>%
+  summarize(TotalCount = sum(Count)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) %>%
+  pull(Offense.Parent.Group)
+
+# Filter data for the top 10 crime types
+filtered_data <- crime_counts %>%
+  filter(Offense.Parent.Group %in% top_crime_types)
+
+# Calculate descriptive statistics for each crime type
+crime_statistics <- filtered_data %>%
+  group_by(Offense.Parent.Group) %>%
+  summarize(
+    Mean = mean(Count),
+    SD = sd(Count),
+    Min = min(Count),
+    Max = max(Count),
+    TotalCount = sum(Count)
+      
+  )
+
+fn_table = crime_statistics %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) 
+  
+
+# Print the result
+print(fn_table)
+```
+
+
+
+#Phoenix Pre
+```{r}
+up_phoenix_pre$YearMonthDate <- format(up_phoenix_pre$OCCURRED.ON, "%Y-%m-%d")
+
+# Group by year-month and crime type, calculate crime counts
+crime_counts <- up_phoenix_pre %>%
+  group_by(YearMonthDate, UCR.CRIME.CATEGORY) %>%
+  summarize(Count = n())
+
+# Select the top 10 crime types overall
+top_crime_types <- crime_counts %>%
+  group_by(UCR.CRIME.CATEGORY, YearMonthDate) %>%
+  summarize(TotalCount = sum(Count)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) %>%
+  pull(UCR.CRIME.CATEGORY)
+
+# Filter data for the top 10 crime types
+filtered_data <- crime_counts %>%
+  filter(UCR.CRIME.CATEGORY %in% top_crime_types)
+
+# Calculate descriptive statistics for each crime type
+crime_statistics <- filtered_data %>%
+  group_by(UCR.CRIME.CATEGORY) %>%
+  summarize(
+    Mean = mean(Count),
+    SD = sd(Count),
+    Min = min(Count),
+    Max = max(Count),
+    TotalCount = sum(Count)
+      
+  )
+
+fn_table = crime_statistics %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) 
+  
+
+# Print the result
+print(fn_table)
+```
+
+#Phonix Post
+```{r}
+up_phoenix_post$YearMonthDate <- format(up_phoenix_post$OCCURRED.ON, "%Y-%m-%d")
+
+# Group by year-month and crime type, calculate crime counts
+crime_counts <- up_phoenix_pre %>%
+  group_by(YearMonthDate, UCR.CRIME.CATEGORY) %>%
+  summarize(Count = n())
+
+# Select the top 10 crime types overall
+top_crime_types <- crime_counts %>%
+  group_by(UCR.CRIME.CATEGORY, YearMonthDate) %>%
+  summarize(TotalCount = sum(Count)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) %>%
+  pull(UCR.CRIME.CATEGORY)
+
+# Filter data for the top 10 crime types
+filtered_data <- crime_counts %>%
+  filter(UCR.CRIME.CATEGORY %in% top_crime_types)
+
+# Calculate descriptive statistics for each crime type
+crime_statistics <- filtered_data %>%
+  group_by(UCR.CRIME.CATEGORY) %>%
+  summarize(
+    Mean = mean(Count),
+    SD = sd(Count),
+    Min = min(Count),
+    Max = max(Count),
+    TotalCount = sum(Count)
+      
+  )
+
+fn_table = crime_statistics %>%
+  arrange(desc(TotalCount)) %>%
+  slice(1:10) 
+  
+
+# Print the result
+print(fn_table)
+```
+
+
+```{r}
+chi_post_crime_counts = table(up_chicago_post$Primary.Type)
+chi_post_crime_counts = chi_post_crime_counts[order(chi_post_crime_counts, decreasing = T)]
+print(chi_post_crime_counts[1:34])
+```
+
+
+
+```{r}
+colnames(up_dallas_pre)
+```
+
+```{r}
+unique(up_dallas_pre$NIBRS.Crime.Category)
+```
+
+
+```{r}
+unique(up_dallas_post$NIBRS.Crime.Category)
+```
+
+```{r}
+dal_pre_crime_counts = table(up_dallas_pre$NIBRS.Crime.Category)
+dal_pre_crime_counts = dal_pre_crime_counts[order(dal_pre_crime_counts, decreasing = T)]
+print(dal_pre_crime_counts[1:32])
+```
+
+
+```{r}
+dal_post_crime_counts = table(up_dallas_post$NIBRS.Crime.Category)
+dal_post_crime_counts = dal_post_crime_counts[order(dal_post_crime_counts, decreasing = T)]
+print(dal_post_crime_counts[1:34])
+```
+
+
+```{r}
+min(up_seattle_post$Offense.Start.DateTime)
+```
+
+
+```{r}
+str(up_chicago_pre)
+```
+
+
+
+
+```{r}
+colnames(up_phoenix_pre)
+```
+
+
+```{r}
+unique(up_phoenix_pre$UCR.CRIME.CATEGORY)
+```
+
+```{r}
+unique(up_phoenix_post$UCR.CRIME.CATEGORY)
+```
+
+```{r}
+pho_pre_crime_counts = table(up_phoenix_pre$UCR.CRIME.CATEGORY)
+pho_pre_crime_counts = pho_pre_crime_counts[order(pho_pre_crime_counts, decreasing = T)]
+print(pho_pre_crime_counts[1:9])
+```
+
+```{r}
+pho_post_crime_counts = table(up_phoenix_post$UCR.CRIME.CATEGORY)
+pho_post_crime_counts = pho_post_crime_counts[order(pho_post_crime_counts, decreasing = T)]
+print(pho_post_crime_counts[1:9])
+```
+
+
+
+
+
+```{r}
+colnames(up_seattle_pre)
+```
+
+```{r}
+unique(up_seattle_pre$Offense.Parent.Group)
+```
+```{r}
+unique(up_seattle_post$Offense.Parent.Group)
+```
+```{r}
+seat_pre_crime_counts = table(up_seattle_pre$Offense.Parent.Group)
+seat_pre_crime_counts = seat_pre_crime_counts[order(seat_pre_crime_counts, decreasing = T)]
+print(seat_pre_crime_counts[1:30])
+```
+```{r}
+seat_post_crime_counts = table(up_seattle_post$Offense.Parent.Group)
+seat_post_crime_counts = seat_post_crime_counts[order(seat_post_crime_counts, decreasing = T)]
+print(seat_post_crime_counts[1:32])
+```
+
+
+
+#Chicago
+```{r}
+
+
+# Modify the data to get the top 10 crime types for each dataset
+top_10_pre <- up_chicago_pre %>%
+  group_by(Primary.Type) %>%
+  summarize(CrimeCount = n()) %>%
+  arrange(desc(CrimeCount)) %>%
+  slice_head(n = 10)
+
+top_10_post <- up_chicago_post %>%
+  group_by(Primary.Type) %>%
+  summarize(CrimeCount = n()) %>%
+  arrange(desc(CrimeCount)) %>%
+  slice_head(n = 10)
+
+# Create a combined dataframe for the top 10 crime types
+combined_top_10 <- rbind(
+  top_10_pre %>% mutate(Dataset = "Chicago Pre"),
+  top_10_post %>% mutate(Dataset = "Chicago Post")
+)
+
+# Calculate the total crime count for each Primary.Type in each dataset
+crime_counts_pre <- chicago_pre %>%
+  group_by(Primary.Type) %>%
+  summarize(CrimeCount = n()) %>%
+  filter(Primary.Type %in% combined_top_10$Primary.Type)
+
+crime_counts_post <- chicago_post %>%
+  group_by(Primary.Type) %>%
+  summarize(CrimeCount = n()) %>%
+  filter(Primary.Type %in% combined_top_10$Primary.Type)
+
+# Combine the total crime counts with the top 10 crime types
+combined_data <- rbind(
+  crime_counts_pre %>% mutate(Dataset = "Pre_COVID-19"),
+  crime_counts_post %>% mutate(Dataset = "Post_COVID-19")
+)
+
+# Create a bar plot
+ggplot(combined_data, aes(x = CrimeCount, y = reorder(Primary.Type, CrimeCount), fill = Dataset)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "",
+    x = "Crime Count",
+    y =  "Crime Type",
+    fill = ""
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 7, hjust = 1),
+    axis.title.y = element_text(margin = margin(t = 1, r = 20, b = 5, l = 0))
+  ) +
+  scale_x_continuous(labels = scales::comma)
+
+
+
+
+```
+
+
+
+
+
+
+#Dallas
+```{r}
+# Modify the data to get the top 10 crime types for each dataset
+top_10_pre <- up_dallas_pre %>%
+  group_by(NIBRS.Crime.Category) %>%
+  summarize(CrimeCount = n()) %>%
+  arrange(desc(CrimeCount)) %>%
+  slice_head(n = 10)
+
+top_10_post <- up_dallas_post %>%
+  group_by(NIBRS.Crime.Category) %>%
+  summarize(CrimeCount = n()) %>%
+  arrange(desc(CrimeCount)) %>%
+  slice_head(n = 10)
+
+# Create a combined dataframe for the top 10 crime types
+combined_top_10 <- rbind(
+  top_10_pre %>% mutate(Dataset = "Dallas Pre"),
+  top_10_post %>% mutate(Dataset = "Dallas Post")
+)
+
+# Calculate the total crime count for each Primary.Type in each dataset
+crime_counts_pre <- up_dallas_pre %>%
+  group_by(NIBRS.Crime.Category) %>%
+  summarize(CrimeCount = n()) %>%
+  filter(NIBRS.Crime.Category %in% combined_top_10$NIBRS.Crime.Category)
+
+crime_counts_post <- up_dallas_post %>%
+  group_by(NIBRS.Crime.Category) %>%
+  summarize(CrimeCount = n()) %>%
+  filter(NIBRS.Crime.Category %in% combined_top_10$NIBRS.Crime.Category)
+
+# Combine the total crime counts with the top 10 crime types
+combined_data <- rbind(
+  crime_counts_pre %>% mutate(Dataset = "Pre_COVID-19"),
+  crime_counts_post %>% mutate(Dataset = "Post_COVID-19")
+)
+
+# Create a bar plot
+ggplot(combined_data, aes(x = CrimeCount, y = reorder(NIBRS.Crime.Category, CrimeCount), fill = Dataset)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "",
+    x = "Crime Count",
+    y =  "Crime Type",
+    fill = ""
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 7, hjust = 1),
+    axis.title.y = element_text(margin = margin(t = 1, r = 20, b = 5, l = 0))
+  ) +
+  scale_x_continuous(labels = scales::comma)
+```
+
+
+
+#Phoenix
+```{r}
+# Modify the data to get the top 10 crime types for each dataset
+top_10_pre <- up_phoenix_pre %>%
+  group_by(UCR.CRIME.CATEGORY) %>%
+  summarize(CrimeCount = n()) %>%
+  arrange(desc(CrimeCount)) %>%
+  slice_head(n = 10)
+
+top_10_post <- up_phoenix_post %>%
+  group_by(UCR.CRIME.CATEGORY) %>%
+  summarize(CrimeCount = n()) %>%
+  arrange(desc(CrimeCount)) %>%
+  slice_head(n = 10)
+
+# Create a combined dataframe for the top 10 crime types
+combined_top_10 <- rbind(
+  top_10_pre %>% mutate(Dataset = "Pre_COVID-19"),
+  top_10_post %>% mutate(Dataset = "Post_COVID-19")
+)
+
+ggplot(combined_top_10, aes(x = CrimeCount, y = reorder(UCR.CRIME.CATEGORY, CrimeCount), fill = Dataset)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "",
+    x = "Crime Count",
+    y = "Crime Type",
+    fill = ""
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 7, hjust = 1),
+    axis.title.y = element_text(margin = margin(t = 1, r = 20, b = 5, l = 0))
+  ) +
+  scale_x_continuous(labels = scales::comma)
+
+```
+
+
+
+
+
+#Seattle
+```{r}
+# Modify the data to get the top 10 crime types for each dataset
+top_10_pre <- up_seattle_pre %>%
+  group_by(Offense.Parent.Group) %>%
+  summarize(CrimeCount = n()) %>%
+  arrange(desc(CrimeCount)) %>%
+  slice_head(n = 10)
+
+top_10_post <- up_seattle_post %>%
+  group_by(Offense.Parent.Group) %>%
+  summarize(CrimeCount = n()) %>%
+  arrange(desc(CrimeCount)) %>%
+  slice_head(n = 10)
+
+# Create a combined dataframe for the top 10 crime types
+combined_top_10 <- rbind(
+  top_10_pre %>% mutate(Dataset = "Seattle Pre"),
+  top_10_post %>% mutate(Dataset = "Seattle Post")
+)
+
+# Calculate the total crime count for each Primary.Type in each dataset
+crime_counts_pre <- up_seattle_pre %>%
+  group_by(Offense.Parent.Group) %>%
+  summarize(CrimeCount = n()) %>%
+  filter(Offense.Parent.Group %in% combined_top_10$Offense.Parent.Group)
+
+crime_counts_post <- up_seattle_post %>%
+  group_by(Offense.Parent.Group) %>%
+  summarize(CrimeCount = n()) %>%
+  filter(Offense.Parent.Group %in% combined_top_10$Offense.Parent.Group)
+
+# Combine the total crime counts with the top 10 crime types
+combined_data <- rbind(
+  crime_counts_pre %>% mutate(Dataset = "Pre_COVID-19"),
+  crime_counts_post %>% mutate(Dataset = "Post_COVID-19")
+)
+
+# Create a bar plot
+ggplot(combined_data, aes(x = CrimeCount, y = reorder(Offense.Parent.Group, CrimeCount), fill = Dataset)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "",
+    x = "Crime Count",
+    y =  "Crime Type",
+    fill = ""
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 7, hjust = 1),
+    axis.title.y = element_text(margin = margin(t = 1, r = 20, b = 5, l = 0))
+  ) +
+  scale_x_continuous(labels = scales::comma)
+
+```
+
+
+
+
+
+
+
+```{r}
+str(up_chicago_pre)
+```
+
+```{r}
+str(up_chicago_pre)
+```
+
+```{r}
+str(up_chicago_post)
+```
+
+
+```{r}
+up_chicago_pre$Dataset <- "chicago pre"
+up_chicago_post$Dataset <- "chicago post"
+combined_data <- rbind(up_chicago_pre, up_chicago_post)
+
+crime_counts <- combined_data %>%
+  group_by(DayOfWeek, Dataset) %>%
+  summarize(CrimeCount = n())
+
+ggplot(crime_counts, aes(x = DayOfWeek, y = CrimeCount, fill = Dataset)) +
+  geom_bar(stat = "identity", position = "dodge") +
+   labs(
+    title = "Crime Count by Weekdays for Two Datasets",
+    x = "Day of the Week",
+    y = "Crime Count",
+    fill = "Dataset"
+  ) +
+  theme_minimal()
+```
+
+
+
+
+
+
+#chicago new
+```{r}
+# Combine chic_pre and chic_post data frames
+combined_df <- bind_rows(
+  up_chicago_pre %>% mutate(DataSet = "Pre_COVID-19"),
+  up_chicago_post %>% mutate(DataSet = "Post_COVID-19")
+)
+
+# Extract day of the week from the "Date" column and set it as a factor with the desired order
+combined_df$DayOfWeek <- factor(weekdays(combined_df$Date), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+# Calculate crime rates
+crime_counts <- combined_df %>%
+  group_by(DataSet, DayOfWeek) %>%
+  summarize(Count = n()) %>%
+  ungroup() %>%
+  mutate(CrimeRate = ifelse(DataSet == "Pre_COVID-19", Count / 48, Count / 44))
+
+# Create a bar plot with different colors for chic_pre and chic_post
+ggplot(crime_counts, aes(x = DayOfWeek, y = CrimeRate, fill = DataSet)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Chicago",
+       x = "Day of the Week",
+       y = "Crime Rate (per Month)") +  # Updated y-axis label
+  scale_fill_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.title = element_blank())
+
+```
+
+
+
+
+
+
+#Dallas new
+```{r}
+# Combine chic_pre and chic_post data frames
+combined_df <- bind_rows(
+  up_dallas_pre %>% mutate(DataSet = "Pre_COVID-19"),
+  up_dallas_post %>% mutate(DataSet = "Post_COVID-19")
+)
+
+# Extract day of the week from the "Date" column and set it as a factor with the desired order
+combined_df$DayOfWeek <- factor(weekdays(combined_df$Date1.of.Occurrence), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+# Calculate crime rates
+crime_counts <- combined_df %>%
+  group_by(DataSet, DayOfWeek) %>%
+  summarize(Count = n()) %>%
+  ungroup() %>%
+  mutate(CrimeRate = ifelse(DataSet == "Pre_COVID-19", Count / 48, Count / 44))
+
+# Create a bar plot with different colors for chic_pre and chic_post
+ggplot(crime_counts, aes(x = DayOfWeek, y = CrimeRate, fill = DataSet)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Dallas",
+       x = "Day of the Week",
+       y = "Crime Rate (per Month)") +  # Updated y-axis label
+  scale_fill_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.title = element_blank())
+```
+
+
+
+
+#phoenix new
+```{r}
+# Combine chic_pre and chic_post data frames
+combined_df <- bind_rows(
+  up_phoenix_pre %>% mutate(DataSet = "Pre_COVID-19"),
+  up_phoenix_post %>% mutate(DataSet = "Post_COVID-19")
+)
+
+# Extract day of the week from the "Date" column and set it as a factor with the desired order
+combined_df$DayOfWeek <- factor(weekdays(combined_df$OCCURRED.ON), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+# Calculate crime rates
+crime_counts <- combined_df %>%
+  group_by(DataSet, DayOfWeek) %>%
+  summarize(Count = n()) %>%
+  ungroup() %>%
+  mutate(CrimeRate = ifelse(DataSet == "Pre_COVID-19", Count / 48, Count / 44))
+
+# Create a bar plot with different colors for chic_pre and chic_post
+ggplot(crime_counts, aes(x = DayOfWeek, y = CrimeRate, fill = DataSet)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Phoenix",
+       x = "Day of the Week",
+       y = "Crime Rate (per Month)") +  # Updated y-axis label
+  scale_fill_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.title = element_blank())
+```
+
+
+
+
+```{r}
+colnames(up_seattle_pre)
+```
+
+
+
+#seattle new
+```{r}
+# Combine chic_pre and chic_post data frames
+combined_df <- bind_rows(
+  up_seattle_pre %>% mutate(DataSet = "Pre_COVID-19"),
+  up_seattle_post %>% mutate(DataSet = "Post_COVID-19")
+)
+
+# Extract day of the week from the "Date" column and set it as a factor with the desired order
+combined_df$DayOfWeek <- factor(weekdays(combined_df$Offense.Start.DateTime), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+# Calculate crime rates
+crime_counts <- combined_df %>%
+  group_by(DataSet, DayOfWeek) %>%
+  summarize(Count = n()) %>%
+  ungroup() %>%
+  mutate(CrimeRate = ifelse(DataSet == "Pre_COVID-19", Count / 48, Count / 44))
+
+# Create a bar plot with different colors for chic_pre and chic_post
+ggplot(crime_counts, aes(x = DayOfWeek, y = CrimeRate, fill = DataSet)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Seattle",
+       x = "Day of the Week",
+       y = "Crime Rate (per Month)") +  # Updated y-axis label
+  scale_fill_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.title = element_blank())
+```
+
+
+
+
+
+
+```{r}
+# Combine chic_pre and chic_post data frames
+combined_df <- bind_rows(
+  up_chicago_pre %>% mutate(DataSet = "Pre_COVID-19"),
+  up_chicago_post %>% mutate(DataSet = "Post_COVID-19")
+)
+
+# Extract the season from the "Date" column
+combined_df$Month <- tolower(months(combined_df$Date))
+combined_df$Season <- case_when(
+  combined_df$Month %in% c("december", "january", "february") ~ "Winter",
+  combined_df$Month %in% c("march", "april", "may") ~ "Spring",
+  combined_df$Month %in% c("june", "july", "august") ~ "Summer",
+  combined_df$Month %in% c("september", "october", "november") ~ "Fall"
+)
+
+# Create a summary data frame with the count of crimes by season and dataset
+crime_counts <- combined_df %>%
+  group_by(DataSet, Season) %>%
+  summarize(Count = n()) %>%
+  ungroup() %>%
+ mutate(CrimeRate = ifelse(DataSet == "Pre_COVID-19", Count / 48, Count / 44))
+
+
+# Sort the data frame by Count in descending order
+crime_counts <- crime_counts %>% arrange(DataSet, Season)
+
+# Create a bar plot with different colors for chic_pre and chic_post
+ggplot(crime_counts, aes(x = Season, y = CrimeRate, fill = DataSet)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Chicago",
+       x = "Season",
+       y = "Crime Rate (per Month)") +
+  scale_fill_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(legend.title = element_blank()) +
+scale_y_continuous(labels = scales::comma)
+
+```
+
+
+
+
+
+```{r}
+# Combine chic_pre and chic_post data frames
+combined_df <- bind_rows(
+  up_dallas_pre %>% mutate(DataSet = "Pre_COVID-19"),
+  up_dallas_post %>% mutate(DataSet = "Post_COVID-19")
+)
+
+# Extract the season from the "Date" column
+combined_df$Month <- tolower(months(combined_df$Date1.of.Occurrence))
+combined_df$Season <- case_when(
+  combined_df$Month %in% c("december", "january", "february") ~ "Winter",
+  combined_df$Month %in% c("march", "april", "may") ~ "Spring",
+  combined_df$Month %in% c("june", "july", "august") ~ "Summer",
+  combined_df$Month %in% c("september", "october", "november") ~ "Fall"
+)
+
+# Create a summary data frame with the count of crimes by season and dataset
+crime_counts <- combined_df %>%
+  group_by(DataSet, Season) %>%
+  summarize(Count = n()) %>%
+  ungroup() %>%
+ mutate(CrimeRate = ifelse(DataSet == "Pre_COVID-19", Count / 48, Count / 44))
+
+
+# Sort the data frame by Count in descending order
+crime_counts <- crime_counts %>% arrange(DataSet, Season)
+
+# Create a bar plot with different colors for chic_pre and chic_post
+ggplot(crime_counts, aes(x = Season, y = CrimeRate, fill = DataSet)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Dallas",
+       x = "Season",
+       y = "Crime Rate (per Month)") +
+  scale_fill_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(legend.title = element_blank()) +
+scale_y_continuous(labels = scales::comma)
+```
+
+
+
+```{r}
+# Combine chic_pre and chic_post data frames
+combined_df <- bind_rows(
+  up_phoenix_pre %>% mutate(DataSet = "Pre_COVID-19"),
+  up_phoenix_post %>% mutate(DataSet = "Post_COVID-19")
+)
+
+
+combined_df$OCCURRED.ON <- as.Date(combined_df$OCCURRED.ON, format = "%Y-%m-%d")
+
+# Extract day of the week from the "OCCURRED.ON" column
+combined_df$DayOfWeek <- weekdays(combined_df$OCCURRED.ON)
+
+# Extract the season from the "Date" column
+combined_df$Month <- tolower(months(combined_df$OCCURRED.ON))
+combined_df$Season <- case_when(
+  combined_df$Month %in% c("december", "january", "february") ~ "Winter",
+  combined_df$Month %in% c("march", "april", "may") ~ "Spring",
+  combined_df$Month %in% c("june", "july", "august") ~ "Summer",
+  combined_df$Month %in% c("september", "october", "november") ~ "Fall"
+)
+
+# Create a summary data frame with the count of crimes by season and dataset
+crime_counts <- combined_df %>%
+  group_by(DataSet, Season) %>%
+  summarize(Count = n()) %>%
+  ungroup() %>%
+ mutate(CrimeRate = ifelse(DataSet == "Pre_COVID-19", Count / 48, Count / 44))
+
+
+# Sort the data frame by Count in descending order
+crime_counts <- crime_counts %>% arrange(DataSet, Season)
+
+# Create a bar plot with different colors for chic_pre and chic_post
+ggplot(crime_counts, aes(x = Season, y = CrimeRate, fill = DataSet)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Phoenix",
+       x = "Season",
+       y = "Crime Rate (per Month)") +
+  scale_fill_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(legend.title = element_blank()) +
+scale_y_continuous(labels = scales::comma)
+```
+
+
+```{r}
+colnames(up_seattle_pre)
+```
+
+
+```{r}
+# Combine chic_pre and chic_post data frames
+combined_df <- bind_rows(
+  up_seattle_pre %>% mutate(DataSet = "Pre_COVID-19"),
+  up_seattle_post %>% mutate(DataSet = "Post_COVID-19")
+)
+
+# Extract the season from the "Date" column
+combined_df$Month <- tolower(months(combined_df$Offense.Start.DateTime))
+combined_df$Season <- case_when(
+  combined_df$Month %in% c("december", "january", "february") ~ "Winter",
+  combined_df$Month %in% c("march", "april", "may") ~ "Spring",
+  combined_df$Month %in% c("june", "july", "august") ~ "Summer",
+  combined_df$Month %in% c("september", "october", "november") ~ "Fall"
+)
+
+# Create a summary data frame with the count of crimes by season and dataset
+crime_counts <- combined_df %>%
+  group_by(DataSet, Season) %>%
+  summarize(Count = n()) %>%
+  ungroup() %>%
+ mutate(CrimeRate = ifelse(DataSet == "Pre_COVID-19", Count / 48, Count / 44))
+
+
+# Sort the data frame by Count in descending order
+crime_counts <- crime_counts %>% arrange(DataSet, Season)
+
+# Create a bar plot with different colors for chic_pre and chic_post
+ggplot(crime_counts, aes(x = Season, y = CrimeRate, fill = DataSet)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Seattle",
+       x = "Season",
+       y = "Crime Rate (per Month)") +
+  scale_fill_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(legend.title = element_blank()) +
+scale_y_continuous(labels = scales::comma)
+```
+
+
+
+
+
+
+```{r}
+
+# Create a data frame with the top 10 locations for each dataset and calculate crime rate
+top_locations_df <- rbind(
+  up_chicago_pre %>%
+    group_by(Location.Description) %>%
+    summarize(Count = n()) %>%
+    arrange(desc(Count)) %>%
+    head(10) %>%
+    mutate( Time_Frame = "Pre_COVID-19", Rate = Count / 48),
+  
+  up_chicago_post %>%
+    group_by(Location.Description) %>%
+    summarize(Count = n()) %>%
+    arrange(desc(Count)) %>%
+    head(10) %>%
+    mutate( Time_Frame = "Post_COVID-19", Rate = Count / 44)
+)
+
+# Create a line plot with different colors for the datasets
+ggplot(top_locations_df, aes(x = reorder(Location.Description, -Rate), y = Rate, color = Time_Frame, group = Time_Frame)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Chicago",
+    x = "Location Description",
+    y = "Crime Rate (per Month)"
+  ) +
+  scale_color_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+
+
+```{r}
+# Create a data frame with the top 10 locations for each dataset and calculate crime rate
+top_locations_df <- rbind(
+  up_dallas_pre %>%
+    group_by(Type..Location) %>%
+    summarize(Count = n()) %>%
+    arrange(desc(Count)) %>%
+    head(10) %>%
+    mutate(Time_Frame = "Pre_COVID-19", Rate = Count / 48),
+  
+  up_dallas_post %>%
+    group_by(Type..Location) %>%
+    summarize(Count = n()) %>%
+    arrange(desc(Count)) %>%
+    head(10) %>%
+    mutate(Time_Frame = "Post_COVID-19", Rate = Count / 44)
+)
+
+# Create a line plot with different colors for the datasets
+ggplot(top_locations_df, aes(x = reorder(Type..Location, -Rate), y = Rate, color = Time_Frame, group = Time_Frame)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Dallas",
+    x = "Location Description",
+    y = "Crime Rate (per Month)"
+  ) +
+  scale_color_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+```{r}
+ # Create a data frame with the top 10 locations for each dataset and calculate crime rate
+top_locations_df <- rbind(
+  up_phoenix_pre %>%
+    group_by(PREMISE.TYPE) %>%
+    summarize(Count = n()) %>%
+    arrange(desc(Count)) %>%
+    head(10) %>%
+    mutate(Time_Frame = "Pre_COVID-19", Rate = Count / 48),
+  
+  up_phoenix_post %>%
+    group_by(PREMISE.TYPE) %>%
+    summarize(Count = n()) %>%
+    arrange(desc(Count)) %>%
+    head(10) %>%
+    mutate(Time_Frame = "Post_COVID-19", Rate = Count / 44)
+)
+
+# Create a line plot with different colors for the datasets
+ggplot(top_locations_df, aes(x = reorder(PREMISE.TYPE, -Rate), y = Rate, color = Time_Frame, group = Time_Frame)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Phoenix",
+    x = "Location Description",
+    y = "Crime Rate (per Month)"
+  ) +
+  scale_color_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+colnames(up_seattle_pre)
+```
+
+
+
+```{r}
+ # Create a data frame with the top 10 locations for each dataset and calculate crime rate
+top_locations_df <- rbind(
+  up_seattle_pre %>%
+    group_by(MCPP) %>%
+    summarize(Count = n()) %>%
+    arrange(desc(Count)) %>%
+    head(10) %>%
+    mutate(Time_Frame = "Pre_COVID-19", Rate = Count / 48),
+  
+  up_seattle_post %>%
+    group_by(MCPP) %>%
+    summarize(Count = n()) %>%
+    arrange(desc(Count)) %>%
+    head(10) %>%
+    mutate(Time_Frame = "Post_COVID-19", Rate = Count / 44)
+)
+
+# Create a line plot with different colors for the datasets
+ggplot(top_locations_df, aes(x = reorder(MCPP, -Rate), y = Rate, color = Time_Frame, group = Time_Frame)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Seattle",
+    x = "Location Description",
+    y = "Crime Rate (per Month)"
+  ) +
+  scale_color_manual(values = c("Pre_COVID-19" = "blue", "Post_COVID-19" = "red")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+```{r}
+
+counted_data1 = chicago_pre %>%
+mutate(Date = as.Date(Date, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+counted_data2 <- chicago_post %>%
+mutate(Date = as.Date(Date, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+
+
+# Create a time series plot for both dataset1 and dataset2 crimes by month
+ggplot() +
+  geom_line(data = counted_data1, aes(x = month, y = Count, group = 1, color = "chicago pre")) +
+  geom_line(data = counted_data2, aes(x = month, y = Count, group = 1, color = "chicago post")) +
+  geom_smooth(data = counted_data1, aes(x = month, y = Count), method = "loess", se = FALSE, color = "red") +
+  geom_smooth(data = counted_data2, aes(x = month, y = Count), method = "loess", se = FALSE, color = "blue") +
+  geom_vline(xintercept = "2020-03", color = "black") +
+  annotate("text", x = "2020-03", y = max(counted_data1$Count), label = "SAH-Start", vjust = -0.5, hjust = 0) +
+  geom_vline(xintercept = "2021-03", color = "black") +
+  annotate("text", x = "2021-03", y = max(counted_data2$Count), label = "SAH-End", vjust = -0.5, hjust = 0) +
+  labs(title = "",
+       x = "Month",
+       y = "Count") +
+  scale_color_manual(values = c("chicago pre" = "red", "chicago post" = "blue")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))
+
+
+```
+
+
+#**********change point analysis********
+
+```{r}
+library(changepoint)
+```
+
+
+```{r}
+# Assuming you have the necessary libraries loaded and changepoint results available
+
+# Plotting code
+ggplot() +
+  geom_line(data = counted_data1, aes(x = month, y = Count, group = 1, color = "chicago pre")) +
+  geom_line(data = counted_data2, aes(x = month, y = Count, group = 1, color = "chicago post")) +
+  geom_smooth(data = counted_data1, aes(x = month, y = Count), method = "loess", se = FALSE, color = "red") +
+  geom_smooth(data = counted_data2, aes(x = month, y = Count), method = "loess", se = FALSE, color = "blue") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-01")), color = "black") +
+  geom_vline(xintercept = as.numeric(as.Date("2021-03-01")), color = "black") +
+  geom_vline(xintercept = numeric_dates_phase1[cpt_result_phase1@cpts], color = "red", linetype = "dashed") +
+  geom_vline(xintercept = numeric_dates_phase2[cpt_result_phase2@cpts], color = "blue", linetype = "dashed") +
+  annotate("text", x = as.Date("2020-03-01"), y = max(counted_data1$Count), label = "SAH-Start", vjust = -0.5, hjust = 0) +
+  annotate("text", x = as.Date("2021-03-01"), y = max(counted_data2$Count), label = "SAH-End", vjust = -0.5, hjust = 0) +
+  labs(title = "Crime Counts Comparison: Chicago Pre vs. Chicago Post",
+       x = "Month",
+       y = "Count") +
+  scale_color_manual(values = c("chicago pre" = "red", "chicago post" = "blue")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))
+
+```
+
+
+
+
+
+
+
+
+```{r}
+library(ggplot2)
+
+counted_data1 = chicago_pre %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d")) %>%
+  group_by(month = format(Date, "%Y-%m")) %>%
+  summarise(Count = n())
+
+counted_data2 <- chicago_post %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d")) %>%
+  group_by(month = format(Date, "%Y-%m")) %>%
+  summarise(Count = n())
+
+# Create a time series plot for both dataset1 and dataset2 crimes by month
+ggplot() +
+  geom_line(data = counted_data1, aes(x = month, y = Count, group = 1, color = "chicago pre")) +
+  geom_line(data = counted_data2, aes(x = month, y = Count, group = 1, color = "chicago post")) +
+  geom_smooth(data = counted_data1, aes(x = month, y = Count), method = "loess", se = FALSE, color = "red") +
+  geom_smooth(data = counted_data2, aes(x = month, y = Count), method = "loess", se = FALSE, color = "blue") +
+  geom_vline(xintercept = as.Date("2020-03-01"), color = "black") +
+  annotate("text", x = as.Date("2020-03-01"), y = max(counted_data1$Count), label = "SAH-Start", vjust = -0.5, hjust = 0) +
+  geom_vline(xintercept = as.Date("2021-03-01"), color = "black") +
+  annotate("text", x = as.Date("2021-03-01"), y = max(counted_data2$Count), label = "SAH-End", vjust = -0.5, hjust = 0) +
+  labs(title = "",
+       x = "Month",
+       y = "Count") +
+  scale_color_manual(values = c("chicago pre" = "red", "chicago post" = "blue")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
+  scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")  # Format the date labels
+
+
+
+```
+
+
+
+
+```{r}
+
+counted_data1 = up_dallas_pre %>%
+mutate(Date = as.Date(Date1.of.Occurrence, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+counted_data2 <- up_dallas_post %>%
+mutate(Date = as.Date(Date1.of.Occurrence, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+
+
+# Create a time series plot for both dataset1 and dataset2 crimes by month
+ggplot() +
+  geom_line(data = counted_data1, aes(x = month, y = Count, group = 1, color = "dallas pre")) +
+  geom_line(data = counted_data2, aes(x = month, y = Count, group = 1, color = "dallas post")) +
+  geom_smooth(data = counted_data1, aes(x = month, y = Count), method = "loess", se = FALSE, color = "red") +
+  geom_smooth(data = counted_data2, aes(x = month, y = Count), method = "loess", se = FALSE, color = "blue") +
+  geom_vline(xintercept = "2020-03", color = "black") +
+  annotate("text", x = "2020-03", y = max(counted_data1$Count), label = "SAH-Start", vjust = -0.5, hjust = 0) +
+  geom_vline(xintercept = "2020-09", color = "black") +
+  annotate("text", x = "2020-09", y = max(counted_data2$Count), label = "SAH-End", vjust = -0.5, hjust = 0) +
+  labs(title = "Crime Trends by Month for dallas pre and dallas post",
+       x = "Month",
+       y = "Count") +
+  scale_color_manual(values = c("dallas pre" = "red", "dallas post" = "blue")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+
+
+```{r}
+counted_data1 = up_losAngalese_pre %>%
+mutate(Date = as.Date(Date.Rptd, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+counted_data2 <- up_losAngalese_post %>%
+mutate(Date = as.Date(Date.Rptd, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+
+
+# Create a time series plot for both dataset1 and dataset2 crimes by month
+ggplot() +
+  geom_line(data = counted_data1, aes(x = month, y = Count, group = 1, color = "LA pre")) +
+  geom_line(data = counted_data2, aes(x = month, y = Count, group = 1, color = "LA post")) +
+  geom_smooth(data = counted_data1, aes(x = month, y = Count), method = "loess", se = FALSE, color = "red") +
+  geom_smooth(data = counted_data2, aes(x = month, y = Count), method = "loess", se = FALSE, color = "blue") +
+  geom_vline(xintercept = "2020-03", color = "black") +
+  annotate("text", x = "2020-03", y = max(counted_data1$Count), label = "SAH-Start", vjust = -0.5, hjust = 0) +
+  geom_vline(xintercept = "2020-07", color = "black") +
+  annotate("text", x = "2020-07", y = max(counted_data2$Count), label = "SAH-End", vjust = -0.5, hjust = 0) +
+  labs(title = "Crime Trends by Month for losAngalese pre and losAngalese post",
+       x = "Month",
+       y = "Count") +
+  scale_color_manual(values = c("LA pre" = "red", "LA post" = "blue")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r}
+colnames(up_phoenix_pre)
+```
+
+
+```{r}
+counted_data1 = up_phoenix_pre %>%
+mutate(Date = as.Date(OCCURRED.ON, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+counted_data2 <- up_phoenix_post %>%
+mutate(Date = as.Date(OCCURRED.ON, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+
+
+# Create a time series plot for both dataset1 and dataset2 crimes by month
+ggplot() +
+  geom_line(data = counted_data1, aes(x = month, y = Count, group = 1, color = "phoenix pre")) +
+  geom_line(data = counted_data2, aes(x = month, y = Count, group = 1, color = "phoenix post")) +
+  geom_smooth(data = counted_data1, aes(x = month, y = Count), method = "loess", se = FALSE, color = "red") +
+  geom_smooth(data = counted_data2, aes(x = month, y = Count), method = "loess", se = FALSE, color = "blue") +
+  geom_vline(xintercept = "2020-03", color = "black") +
+  annotate("text", x = "2020-03", y = max(counted_data1$Count), label = "SAH-Start", vjust = -0.5, hjust = 0) +
+  geom_vline(xintercept = "2020-07", color = "black") +
+  annotate("text", x = "2020-07", y = max(counted_data2$Count), label = "SAH-End", vjust = -0.5, hjust = 0) +
+  labs(title = "Crime Trends by Month for phoenix pre and phoenix post",
+       x = "Month",
+       y = "Count") +
+  scale_color_manual(values = c("phoenix pre" = "red", "phoenix post" = "blue")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+```{r}
+colnames(up_seattle_pre)
+```
+
+
+
+```{r}
+str(up_seattle_pre)
+```
+```{r}
+counted_data1 = up_seattle_pre %>%
+mutate(Date = as.Date(Offense.End.DateTime, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+counted_data2 <- up_seattle_post %>%
+mutate(Date = as.Date(Offense.Start.DateTime, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+
+
+# Create a time series plot for both dataset1 and dataset2 crimes by month
+ggplot() +
+  geom_line(data = counted_data1, aes(x = month, y = Count, group = 1, color = "seattle pre")) +
+  geom_line(data = counted_data2, aes(x = month, y = Count, group = 1, color = "seattle post")) +
+  geom_smooth(data = counted_data1, aes(x = month, y = Count), method = "loess", se = FALSE, color = "red") +
+  geom_smooth(data = counted_data2, aes(x = month, y = Count), method = "loess", se = FALSE, color = "blue") +
+  geom_vline(xintercept = "2020-03", color = "black") +
+  annotate("text", x = "2020-03", y = max(counted_data1$Count), label = "SAH-Start", vjust = -0.5, hjust = 0) +
+  geom_vline(xintercept = "2020-07", color = "black") +
+  annotate("text", x = "2020-07", y = max(counted_data2$Count), label = "SAH-End", vjust = -0.5, hjust = 0) +
+  labs(title = "Crime Trends by Month for seattle pre and seattle post",
+       x = "Month",
+       y = "Count") +
+  scale_color_manual(values = c("seattle pre" = "red", "seattle post" = "blue")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+
+```{r}
+counted_data1 = up_seattle_pre %>%
+mutate(Date = as.Date(Offense.Start.DateTime, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+counted_data2 <- up_seattle_post %>%
+mutate(Date = as.Date(Offense.Start.DateTime, format = "%Y-%m-%d")) %>%
+group_by(month = format(Date, "%Y-%m")) %>%
+summarise(Count = n())
+
+
+
+# Create a time series plot for both dataset1 and dataset2 crimes by month
+ggplot() +
+  geom_line(data = counted_data1, aes(x = month, y = Count, group = 1, color = "seattle pre")) +
+  geom_line(data = counted_data2, aes(x = month, y = Count, group = 1, color = "seattle post")) +
+  geom_smooth(data = counted_data1, aes(x = month, y = Count), method = "loess", se = FALSE, color = "red") +
+  geom_smooth(data = counted_data2, aes(x = month, y = Count), method = "loess", se = FALSE, color = "blue") +
+  geom_vline(xintercept = "2020-03", color = "black") +
+  annotate("text", x = "2020-03", y = max(counted_data1$Count), label = "SAH-Start", vjust = -0.5, hjust = 0) +
+  geom_vline(xintercept = "2020-07", color = "black") +
+  annotate("text", x = "2020-07", y = max(counted_data2$Count), label = "SAH-End", vjust = -0.5, hjust = 0) +
+  labs(title = "Crime Trends by Month for seattle pre and seattle post",
+       x = "Month",
+       y = "Count") +
+  scale_color_manual(values = c("seattle pre" = "red", "seattle post" = "blue")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+#********************************************************************************
+
+
+```{r}
+
+
+# Assuming your dataset is named 'crime_data'
+# Assuming you have a 'Primary.Type' column
+
+# Create a data frame with the top 10 crime types
+top_crime_types <- up_chicago_pre %>%
+  group_by(Primary.Type) %>%
+  summarize(Count = n()) %>%
+  arrange(desc(Count)) %>%
+  head(10)
+
+# Create a list to store forecasts
+forecast_list <- list()
+
+# Iterate over the top 10 crime types and forecast each type
+for (crime_type in top_crime_types$Primary.Type) {
+  crime_data_subset <- up_chicago_pre %>%
+    filter(Primary.Type == crime_type)
+
+  # Prepare a time series from the data
+  crime_time_series <- crime_data_subset %>%
+    mutate(Date = as.Date(Date)) %>%
+    group_by(Date) %>%
+    summarize(Count = n())
+
+  # Fit an ARIMA model
+  auto_arima_model <- auto.arima(crime_time_series$Count)
+
+  # Forecast for the next 1 month
+  forecast_result <- forecast(auto_arima_model, h = 30)
+
+  # Store the forecast result in the list
+  forecast_list[[crime_type]] <- forecast_result
+}
+
+# Print forecast results
+for (crime_type in names(forecast_list)) {
+  cat("Crime Type:", crime_type, "\n")
+  print(forecast_list[[crime_type]])
+  cat("\n")
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+#*************************************************************************************
+
+```{r}
+library(shapefiles)
+```
+```{r}
+library(rgdal)
+```
+
+```{r}
+library(spatstat)
+```
+
+
+```{r}
+chicago_shp <- readOGR(dsn = "E:/E/4th_year_1sem/Research/GIS/shapefiles_1",layer = "geo_export_6c977322-0a01-4386-849c-278ec22209fe" )
+
+w3=as.owin(chicago_shp)
+```
+
+
+
+
+
+```{r}
+chi_filtered_data <- up_chicago_pre %>%
+  filter(!is.na(Longitude) & !is.na(Latitude))
+```
+
+
+
+```{r}
+library(sf)
+```
+
+
+```{r}
+coords <- SpatialPoints(chi_filtered_data[,c("Longitude","Latitude")])
+crime_spatial_df <-SpatialPointsDataFrame(coords,chi_filtered_data)
+proj4string(crime_spatial_df) <- CRS("+proj=longlat +ellps=WGS84")
+```
+
+
+```{r}
+plot(crime_spatial_df)
+```
+
+```{r}
+library(spatstat)
+```
+
+
+```{r}
+crimePPP_Theft = ppp(crime_spatial_df$Longitude[crime_spatial_df$crime=="THEFT"],crime_spatial_df$Latitude[crime_spatial_df$crime=="THEFT"],w3)
+```
+
+
+```{r}
+bbox = c(-88.0225,41.5949,-87.2713,42.0677)
+chicago_map <- get_map(location = bbox, source = "stamen", maptype = "toner-lite")
+
+map_crime <- function(up_chicago_pre) {
+  #filtered <- filter(crime_df, Primary.Type %in% crime)
+  plot <- ggmap(chicago_map, extent='device') + 
+          geom_density2d(data = up_chicago_pre%>% filter(Primary.Type %in% up_chicago_pre[up_chicago_pre$Primary.Type %in% up_chicago_pre[,1],]$Primary.Type ) , 
+          aes(x = Longitude, y = Latitude), size = 0.3) + stat_density2d(data = up_chicago_pre%>% filter(Primary.Type %in% up_chicago_pre[up_chicago_pre$Primary.Type %in% up_chicago_pre[,1],]$Primary.Type ) , 
+          aes(x = Longitude, y = Latitude, fill = ..level.., alpha = ..level..), size = 0.01,
+          bins = 16, geom = "polygon") + scale_fill_gradient(low = "green", high = "red", 
+          guide = FALSE) + scale_alpha(range = c(0, 0.3), guide = FALSE)+
+            facet_wrap(~ crime, ncol = 3)
+  return(plot)
+}
+
+# Display Top 6 Crime Types Density Distribution across Chicago
+map_crime(up_chicago_pre[1:1000000,])
+```
+
+```{r}
+str(up_chicago_pre)
+```
+
+
+```{r}
+colnames(up_chicago_pre)
+```
+```{r}
+unique(up_chicago_pre$Longitude)
+```
+
+
+```{r  fig.height=8, fig.width=16, message=FALSE, warning=FALSE}
+# Load required libraries
+library(ggmap)
+library(forecast)
+
+
+
+# Define the geographical bounding box for Chicago
+bbox <- c(left = -88.0225, bottom = 41.5949, right = -87.2713, top = 42.0677)
+
+# Fetch the map of Chicago
+chicago_map <- get_map(location = bbox, source = "stamen", maptype = "toner-lite")
+
+# Create a function to plot crime density on the map
+map_crime <- function(up_chicago_pre) {
+  # Filter the dataset based on your criteria
+  filtered_data <- up_chicago_pre %>%
+    filter(!is.na(up_chicago_pre$Longitude) & !is.na(up_chicago_pre$Latitude))  # Filter out rows with missing coordinates
+
+  # Create the density plot
+  plot <- ggmap(chicago_map) +
+    geom_density2d(data = filtered_data, aes(x = Longitude, y = Latitude), size = 0.3) +
+    stat_density2d(data = filtered_data, aes(x = Longitude, y = Latitude, fill = ..level.., alpha = ..level..), size = 0.01, bins = 16, geom = "polygon") +
+    scale_fill_gradient(low = "green", high = "red", guide = FALSE) +
+    scale_alpha(range = c(0, 0.3), guide = FALSE) +
+    facet_wrap(~ Primary.Type, ncol = 3)
+
+  return(plot)
+}
+
+# Display the crime density map for your dataset
+crime_density_map <- map_crime(up_chicago_pre)
+print(crime_density_map)
+
+```
+
+
+
+
+
+#*****************************************************************
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(forecast)
+```
+
+
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(lubridate)
+library(forecast)
+
+# Assuming 'crime_data_pre' and 'crime_data_post' are your datasets
+# You may need to adjust column names based on your actual dataset
+
+# Pre-processing for prior to COVID-19
+up_chicago_pre <- up_chicago_pre %>%
+  mutate(Date = as.Date(Date),
+         YearMonth = floor_date(Date, unit = "month"))
+
+# Pre-processing for post-COVID-19
+up_chicago_post <- up_chicago_post %>%
+  mutate(Date = as.Date(Date),
+         YearMonth = floor_date(Date, unit = "month"))
+
+# Time series analysis for prior to COVID-19
+ts_pre <- up_chicago_pre %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup() %>%
+  as.ts(zoo::zoo(.$CrimeCount, order.by = .$YearMonth))
+
+# Time series analysis for post-COVID-19
+ts_post <- up_chicago_post %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup() %>%
+  as.ts(zoo::zoo(.$CrimeCount, order.by = .$YearMonth))
+
+# Visualize the time series patterns
+autoplot(ts_pre, main = "Crime Pattern Prior to COVID-19", ylab = "Crime Count") +
+autolayer(ts_post, series = "Post-COVID-19") +
+theme_minimal()
+
+
+
+
+
+
+
+
+# Fit a suitable time series model for each time frame
+model_pre <- auto.arima(ts_pre$CrimeCount)
+model_post <- auto.arima(ts_post$CrimeCount)
+
+# Compare the models
+summary(model_pre)
+summary(model_post)
+
+```
+
+```{r}
+
+# Pre-processing for prior to COVID-19
+up_chicago_pre <- up_chicago_pre %>%
+  mutate(Date = as.Date(Date),
+         YearMonth = floor_date(Date, unit = "month"))
+
+# Pre-processing for post-COVID-19
+up_chicago_post <- up_chicago_post %>%
+  mutate(Date = as.Date(Date),
+         YearMonth = floor_date(Date, unit = "month"))
+
+# Time series analysis for prior to COVID-19
+ts_pre <- up_chicago_pre %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Time series analysis for post-COVID-19
+ts_post <- up_chicago_post %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Combine data for visualization
+plot_data <- bind_rows(
+  mutate(ts_pre, Series = "Prior to COVID-19"),
+  mutate(ts_post, Series = "Post-COVID-19")
+)
+
+# Visualize the time series patterns
+ggplot(plot_data, aes(x = YearMonth, y = CrimeCount, color = Series)) +
+  geom_line() +
+  labs(
+    title = "Crime Pattern Comparison",
+    y = "Crime Count",
+    color = "Time Period"
+  ) +
+  theme_minimal()
+
+# Fit a suitable time series model for each time frame
+model_pre <- auto.arima(ts_pre$CrimeCount)
+model_post <- auto.arima(ts_post$CrimeCount)
+
+# Compare the models
+print("Model for Prior to COVID-19:")
+print(summary(model_pre))
+
+print("Model for Post-COVID-19:")
+print(summary(model_post))
+
+
+```
+
+
+
+
+```{r}
+
+
+#
+
+# Pre-processing for prior to COVID-19
+up_chicago_pre <- up_chicago_pre %>%
+  mutate(Date = as.Date(Date),
+         YearMonth = floor_date(Date, unit = "month"))
+
+# Time series analysis for prior to COVID-19
+ts_pre <- up_chicago_pre %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Fit a SARIMA model
+sarima_model_pre <- auto.arima(ts_pre$CrimeCount, seasonal = TRUE)
+
+# Print the summary of the SARIMA model
+print(sarima_model_pre)
+
+
+# Diagnostic checks
+checkresiduals(sarima_model_pre)
+
+# ACF and PACF plots
+tsdisplay(sarima_model_pre$residuals, lag.max = 24, main = "ACF and PACF of Residuals")
+
+
+
+
+```
+
+```{r}
+ #Pre-processing for prior to COVID-19
+up_chicago_post <- up_chicago_post %>%
+  mutate(Date = as.Date(Date),
+         YearMonth = floor_date(Date, unit = "month"))
+
+# Time series analysis for prior to COVID-19
+ts_post <- up_chicago_post %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Fit a SARIMA model
+sarima_model_post <- auto.arima(ts_post$CrimeCount, seasonal = TRUE)
+
+
+# Print the summary of the SARIMA model
+print(sarima_model_post)
+
+
+# Diagnostic checks
+checkresiduals(sarima_model_post)
+
+# ACF and PACF plots
+tsdisplay(sarima_model_post$residuals, lag.max = 24, main = "ACF and PACF of Residuals")
+
+
+
+```
+
+```{r}
+# Evaluate Residuals:
+hist(residuals(sarima_model_pre))
+qqnorm(residuals(sarima_model_pre))
+
+hist(residuals(sarima_model_post))
+qqnorm(residuals(sarima_model_post))
+```
+
+#CHICAGO
+
+
+```{r}
+
+
+# Pre-processing
+up_chicago_pre <- up_chicago_pre %>%
+  mutate(Date = as.Date(Date),
+         YearMonth = floor_date(Date, unit = "month"))
+
+# Time series analysis
+Chicago_pre_COVID <- up_chicago_pre %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Convert to time series
+Chicago_pre_COVID <- ts(Chicago_pre_COVID$CrimeCount, start = min(Chicago_pre_COVID$YearMonth), frequency = 12)
+
+# Find the best SARIMA model
+best_sarima <- auto.arima(Chicago_pre_COVID,seasonal = "TRUE")
+
+
+# Display the best model
+summary(best_sarima)
+
+#auto.arima(ts_data,ic="bic",trace = TRUE)
+
+
+
+```
+
+```{r}
+
+# Pre-processing
+up_chicago_post <- up_chicago_post %>%
+  mutate(Date = as.Date(Date),
+         YearMonth = floor_date(Date, unit = "month"))
+
+# Time series analysis
+Chicago_post_COVID <- up_chicago_post %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Convert to time series
+Chicago_post_COVID <- ts(Chicago_post_COVID$CrimeCount, start = min(Chicago_post_COVID$YearMonth), frequency = 12)
+
+# Find the best SARIMA model
+best_sarima <- auto.arima(Chicago_post_COVID,seasonal = "TRUE")
+
+# Display the best model
+summary(best_sarima)
+
+```
+
+
+#DALLAS
+
+
+
+```{r}
+
+# Pre-processing
+up_dallas_pre <- up_dallas_pre %>%
+  mutate(Date = as.Date(Date1.of.Occurrence),
+         YearMonth = floor_date(Date1.of.Occurrence, unit = "month"))
+
+# Time series analysis
+Dallas_pre_COVID <- up_dallas_pre %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Convert to time series
+Dallas_pre_COVID <- ts(Dallas_pre_COVID$CrimeCount, start = min(Dallas_pre_COVID$YearMonth), frequency = 12)
+
+# Find the best SARIMA model
+best_sarima <- auto.arima(Dallas_pre_COVID,seasonal = "TRUE")
+
+# Display the best model
+summary(best_sarima)
+```
+
+```{r}
+# Pre-processing
+up_dallas_post <- up_dallas_post %>%
+  mutate(Date = as.Date(Date1.of.Occurrence),
+         YearMonth = floor_date(Date1.of.Occurrence, unit = "month"))
+
+# Time series analysis
+Dallas_post_COVID <- up_dallas_post %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Convert to time series
+Dallas_post_COVID <- ts(Dallas_post_COVID$CrimeCount, start = min(Dallas_post_COVID$YearMonth), frequency = 12)
+
+# Find the best SARIMA model
+best_sarima <- auto.arima(Dallas_post_COVID,seasonal = "TRUE")
+
+# Display the best model
+summary(best_sarima)
+```
+
+
+#PHOENIX
+
+```{r}
+str(up_phoenix_pre)
+```
+
+
+```{r}
+# Pre-processing
+up_phoenix_pre <- up_phoenix_pre %>%
+  mutate(Date = as.Date(OCCURRED.ON),
+         YearMonth = floor_date(OCCURRED.ON, unit = "month"))
+
+# Time series analysis
+Phoenix_pre_COVID <- up_phoenix_pre %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Convert to time series
+Phoenix_pre_COVID <- ts(Phoenix_pre_COVID$CrimeCount, start = min(Phoenix_pre_COVID$YearMonth), frequency = 12)
+
+# Find the best SARIMA model
+best_sarima <- auto.arima(Phoenix_pre_COVID,seasonal = "TRUE")
+
+# Display the best model
+summary(best_sarima)
+```
+
+```{r}
+# Pre-processing
+up_phoenix_post <- up_phoenix_post %>%
+  mutate(Date = as.Date(OCCURRED.ON),
+         YearMonth = floor_date(OCCURRED.ON, unit = "month"))
+
+# Time series analysis
+Phoenix_post_COVID <- up_phoenix_post %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Convert to time series
+Phoenix_post_COVID <- ts(Phoenix_post_COVID$CrimeCount, start = min(Phoenix_post_COVID$YearMonth), frequency = 12)
+
+# Find the best SARIMA model
+best_sarima <- auto.arima(Phoenix_post_COVID,seasonal = "TRUE")
+
+# Display the best model
+summary(best_sarima)
+```
+
+#Seattle
+
+
+```{r}
+str(up_chicago_pre)
+```
+
+
+```{r}
+# Pre-processing
+up_seattle_pre <- up_seattle_pre %>%
+  mutate(Offense.Start.DateTime = as.Date(Offense.Start.DateTime),
+         YearMonth = floor_date(Offense.Start.DateTime, unit = "month"))
+
+# Time series analysis
+ts_data <- up_seattle_pre %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Convert to time series
+ts_data <- ts(ts_data$CrimeCount, frequency = 12)
+
+# Find the best SARIMA model
+best_sarima <- auto.arima(ts_data,seasonal = "TRUE")
+
+# Display the best model
+summary(best_sarima)
+```
+```{r}
+# Pre-processing
+up_seattle_post <- up_seattle_post %>%
+  mutate(Offense.Start.DateTime = as.Date(Offense.Start.DateTime),
+         YearMonth = floor_date(Offense.Start.DateTime, unit = "month"))
+
+# Time series analysis
+ts_data <- up_seattle_post %>%
+  group_by(YearMonth) %>%
+  summarise(CrimeCount = n()) %>%
+  ungroup()
+
+# Convert to time series
+ts_data <- ts(ts_data$CrimeCount, frequency = 12)
+
+# Find the best SARIMA model
+best_sarima <- auto.arima(ts_data,seasonal = "TRUE")
+
+# Display the best model
+summary(best_sarima)
+```
+
+
+#correlation analysis
+
+```{r}
+# Assuming 'your_data' is your dataset
+# You may need to adjust column names based on your actual dataset
+
+# Get the top 10 occurrences of distinct Primary.Types and Location.Descriptions
+top10_primary_type <- head(names(sort(table(up_chicago_pre$Primary.Type), decreasing = TRUE)), 10)
+top10_location_desc <- head(names(sort(table(up_chicago_pre$Location.Description), decreasing = TRUE)), 10)
+
+# Subset the data for the top 10 Primary.Types and Location.Descriptions
+subset_data <- up_chicago_pre %>%
+  filter(Primary.Type %in% top10_primary_type & Location.Description %in% top10_location_desc)
+
+# Create a contingency table
+contingency_table <- table(subset_data$Primary.Type, subset_data$Location.Description)
+
+# Calculate the correlation between the two variables using the chi-square test
+correlation_result <- chisq.test(contingency_table)
+
+# Print the correlation result
+print(correlation_result)
+
+heatmap(contingency_table,
+        col = colorRampPalette(c("white", "blue"))(100),
+        margins = c(10,10),
+        main = "",
+         cexRow = 0.6,   # Adjust the text size for row labels
+        cexCol = 0.6,   # Adjust the text size for column labels
+        )
+
+print(top10_primary_type)
+print(top10_location_desc)
+
+```
+
+
+
+
+
+
+```{r}
+# Assuming 'your_data' is your dataset
+# You may need to adjust column names based on your actual dataset
+
+# Get the top 10 occurrences of distinct Primary.Types and Location.Descriptions
+top10_primary_type <- head(names(sort(table(up_chicago_post$Primary.Type), decreasing = TRUE)), 10)
+top10_location_desc <- head(names(sort(table(up_chicago_post$Location.Description), decreasing = TRUE)), 10)
+
+# Subset the data for the top 10 Primary.Types and Location.Descriptions
+subset_data <- up_chicago_post %>%
+  filter(Primary.Type %in% top10_primary_type & Location.Description %in% top10_location_desc)
+
+# Create a contingency table
+contingency_table <- table(subset_data$Primary.Type, subset_data$Location.Description)
+
+# Calculate the correlation between the two variables using the chi-square test
+correlation_result <- chisq.test(contingency_table)
+
+# Print the correlation result
+print(correlation_result)
+
+heatmap(contingency_table,
+        col = colorRampPalette(c("white", "red"))(100),
+        margins = c(10,10),
+        main = "",
+         cexRow = 0.6,   # Adjust the text size for row labels
+        cexCol = 0.6,   # Adjust the text size for column labels
+        )
+```
+
+
+
+```{r}
+# Assuming 'your_data' is your dataset
+# You may need to adjust column names based on your actual dataset
+
+# Get the top 10 occurrences of distinct Primary.Types and Location.Descriptions
+top10_primary_type <- head(names(sort(table(up_dallas_pre$NIBRS.Crime.Category), decreasing = TRUE)), 10)
+top10_location_desc <- head(names(sort(table(up_dallas_pre$ Type..Location), decreasing = TRUE)), 10)
+
+# Subset the data for the top 10 Primary.Types and Location.Descriptions
+subset_data <- up_dallas_pre %>%
+  filter(NIBRS.Crime.Category %in% top10_primary_type & Type..Location %in% top10_location_desc)
+
+# Create a contingency table
+contingency_table <- table(subset_data$NIBRS.Crime.Category, subset_data$Type..Location)
+
+# Calculate the correlation between the two variables using the chi-square test
+correlation_result <- chisq.test(contingency_table)
+
+# Print the correlation result
+print(correlation_result)
+
+heatmap(contingency_table,
+        col = colorRampPalette(c("white", "blue"))(100),
+        margins = c(10, 10),
+        main = "",
+         cexRow = 0.6,   # Adjust the text size for row labels
+        cexCol = 0.6,   # Adjust the text size for column labels
+        )
+
+
+print(top10_primary_type)
+
+
+
+print(top10_location_desc)
+
+
+```
+
+
+
+
+
+```{r}
+# Assuming 'your_data' is your dataset
+# You may need to adjust column names based on your actual dataset
+
+# Get the top 10 occurrences of distinct Primary.Types and Location.Descriptions
+top10_primary_type <- head(names(sort(table(up_dallas_post$NIBRS.Crime.Category), decreasing = TRUE)), 10)
+top10_location_desc <- head(names(sort(table(up_dallas_post$ Type..Location), decreasing = TRUE)), 10)
+
+# Subset the data for the top 10 Primary.Types and Location.Descriptions
+subset_data <- up_dallas_post %>%
+  filter(NIBRS.Crime.Category %in% top10_primary_type & Type..Location %in% top10_location_desc)
+
+# Create a contingency table
+contingency_table <- table(subset_data$NIBRS.Crime.Category, subset_data$Type..Location)
+
+# Calculate the correlation between the two variables using the chi-square test
+correlation_result <- chisq.test(contingency_table)
+
+# Print the correlation result
+print(correlation_result)
+
+heatmap(contingency_table,
+        col = colorRampPalette(c("white", "red"))(100),
+        margins = c(10, 10),
+        main = "",
+         cexRow = 0.6,   # Adjust the text size for row labels
+        cexCol = 0.6,   # Adjust the text size for column labels
+        )
+print(top10_primary_type)
+print(top10_location_desc)
+```
+
+
+
+
+```{r}
+# Assuming 'your_data' is your dataset
+# You may need to adjust column names based on your actual dataset
+
+# Get the top 10 occurrences of distinct Primary.Types and Location.Descriptions
+top10_primary_type <- head(names(sort(table(up_phoenix_pre$ UCR.CRIME.CATEGORY), decreasing = TRUE)), 10)
+top10_location_desc <- head(names(sort(table(up_phoenix_pre$ PREMISE.TYPE), decreasing = TRUE)), 10)
+
+# Subset the data for the top 10 Primary.Types and Location.Descriptions
+subset_data <- up_phoenix_pre %>%
+  filter( UCR.CRIME.CATEGORY %in% top10_primary_type & PREMISE.TYPE %in% top10_location_desc)
+
+# Create a contingency table
+contingency_table <- table(subset_data$UCR.CRIME.CATEGORY, subset_data$ PREMISE.TYPE)
+
+# Calculate the correlation between the two variables using the chi-square test
+correlation_result <- chisq.test(contingency_table)
+
+# Print the correlation result
+print(correlation_result)
+
+heatmap(contingency_table,
+        col = colorRampPalette(c("white", "blue"))(100),
+        margins = c(10,10),
+        main = "",
+         cexRow = 0.6,   # Adjust the text size for row labels
+        cexCol = 0.6,   # Adjust the text size for column labels
+        )
+
+print(top10_primary_type)
+print(top10_location_desc)
+```
+
+
+```{r}
+# Assuming 'your_data' is your dataset
+# You may need to adjust column names based on your actual dataset
+
+# Get the top 10 occurrences of distinct Primary.Types and Location.Descriptions
+top10_primary_type <- head(names(sort(table(up_phoenix_post$ UCR.CRIME.CATEGORY), decreasing = TRUE)), 10)
+top10_location_desc <- head(names(sort(table(up_phoenix_post$ PREMISE.TYPE), decreasing = TRUE)), 10)
+
+# Subset the data for the top 10 Primary.Types and Location.Descriptions
+subset_data <- up_phoenix_post %>%
+  filter( UCR.CRIME.CATEGORY %in% top10_primary_type & PREMISE.TYPE %in% top10_location_desc)
+
+# Create a contingency table
+contingency_table <- table(subset_data$UCR.CRIME.CATEGORY, subset_data$ PREMISE.TYPE)
+
+# Calculate the correlation between the two variables using the chi-square test
+correlation_result <- chisq.test(contingency_table)
+
+# Print the correlation result
+print(correlation_result)
+
+heatmap(contingency_table,
+        col = colorRampPalette(c("white", "red"))(100),
+        margins = c(10, 10),
+        main = "",
+         cexRow = 0.6,   # Adjust the text size for row labels
+        cexCol = 0.6,   # Adjust the text size for column labels
+        )
+
+print(top10_primary_type)
+print(top10_location_desc)
+```
+
+
+
+
+
+```{r}
+# Assuming 'your_data' is your dataset
+# You may need to adjust column names based on your actual dataset
+
+# Get the top 10 occurrences of distinct Primary.Types and Location.Descriptions
+top10_primary_type <- head(names(sort(table(up_seattle_pre$ Offense.Parent.Group), decreasing = TRUE)), 10)
+top10_location_desc <- head(names(sort(table(up_seattle_pre$  MCPP), decreasing = TRUE)), 10)
+
+# Subset the data for the top 10 Primary.Types and Location.Descriptions
+subset_data <- up_seattle_pre %>%
+  filter( Offense.Parent.Group %in% top10_primary_type &  MCPP %in% top10_location_desc)
+
+# Create a contingency table
+contingency_table <- table(subset_data$ Offense.Parent.Group, subset_data$ MCPP)
+
+# Calculate the correlation between the two variables using the chi-square test
+correlation_result <- chisq.test(contingency_table)
+
+# Print the correlation result
+print(correlation_result)
+
+heatmap(contingency_table,
+        col = colorRampPalette(c("white", "blue"))(100),
+        margins = c(10,10),
+        main = "",
+         cexRow = 0.6,   # Adjust the text size for row labels
+        cexCol = 0.6,   # Adjust the text size for column labels
+       
+        )
+
+print(top10_primary_type)
+print(top10_location_desc)
+```
+
+
+
+
+
+```{r}
+# Assuming 'your_data' is your dataset
+# You may need to adjust column names based on your actual dataset
+
+# Get the top 10 occurrences of distinct Primary.Types and Location.Descriptions
+top10_primary_type <- head(names(sort(table(up_seattle_post$ Offense.Parent.Group), decreasing = TRUE)), 10)
+top10_location_desc <- head(names(sort(table(up_seattle_post$  MCPP), decreasing = TRUE)), 10)
+
+# Subset the data for the top 10 Primary.Types and Location.Descriptions
+subset_data <- up_seattle_post %>%
+  filter( Offense.Parent.Group %in% top10_primary_type &  MCPP %in% top10_location_desc)
+
+# Create a contingency table
+contingency_table <- table(subset_data$ Offense.Parent.Group, subset_data$ MCPP)
+
+# Calculate the correlation between the two variables using the chi-square test
+correlation_result <- chisq.test(contingency_table)
+
+# Print the correlation result
+print(correlation_result)
+
+heatmap(contingency_table,
+        col = colorRampPalette(c("white", "red"))(100),
+        margins = c(10, 10),
+        main = "",
+         cexRow = 0.6,   # Adjust the text size for row labels
+        cexCol = 0.6,   # Adjust the text size for column labels
+        )
+
+print(top10_primary_type)
+print(top10_location_desc)
+```
+
+
+
+```{r}
+
+top10_primary_type <- head(names(sort(table(up_seattle_post$ Offense.Parent.Group), decreasing = TRUE)), 10)
+top10_location_desc <- head(names(sort(table(up_seattle_post$  MCPP), decreasing = TRUE)), 10)
+
+# Subset the data for the top 10 Primary.Types and Location.Descriptions
+subset_data <- up_seattle_post %>%
+  filter( Offense.Parent.Group %in% top10_primary_type &  MCPP %in% top10_location_desc)
+
+# Create a contingency table
+contingency_table <- table(subset_data$ Offense.Parent.Group, subset_data$ MCPP)
+
+# Calculate the correlation between the two variables using the chi-square test
+correlation_result <- chisq.test(contingency_table)
+
+# Print the correlation result
+print(correlation_result)
+
+
+heatmap(contingency_table,
+        col = colorRampPalette(c("white", "red"))(100),
+        margins = c(10, 10),
+        main = "",
+        cexRow = 0.6,   # Adjust the text size for row labels
+        cexCol = 0.6,   # Adjust the text size for column labels
+        legend = TRUE,  # Display the color scale legend
+        args.legend = list(title = "Association", side = 4, cex = 0.7)
+)
+
+
+
+```
+
+
+
+
+
+#change point analysis
+
+```{r}
+library(ggmap)
+library(ggplot2)
+library(tibble)
+library(lubridate)
+library(chron)
+library(dplyr)
+library(tidyverse)
+library(sp)
+```
+
+
+```{r}
+str(up_dallas_post)
+```
+
+
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(changepoint)
+
+# Assuming your data frame is named 'crime_data'
+# If it's in a different format, adjust accordingly
+
+# Step 1: Create a time series plot of crime counts per day
+
+# Convert 'Date' to Date format
+up_dallas_post$Date1.of.Occurrence <- as.Date(up_dallas_post$Date1.of.Occurrence)
+
+# Count crimes per day
+crime_counts <- up_dallas_post %>%
+  group_by(Date1.of.Occurrence) %>%
+  summarise(Count = n())
+
+# Plotting
+ggplot(crime_counts, aes(x = Date1.of.Occurrence, y = Count)) +
+  geom_line() +
+  labs(title = "",
+       x = "Date",
+       y = "Count") +
+  theme_minimal()
+
+# Step 2: Perform Change Point Analysis for each phase
+
+# Define the start and end dates for each phase
+phase1_start <- as.Date("2020-03-15")
+phase1_end <- as.Date("2020-05-28")
+phase2_start <- as.Date("2020-05-29")
+phase2_end <- as.Date("2020-09-19")
+phase3_start <- as.Date("2020-09-20")
+phase3_end <- as.Date("2023-08-29")
+
+# Subset the data for each phase
+crime_data_phase1 <- up_dallas_post %>% filter(Date1.of.Occurrence >= phase1_start & Date1.of.Occurrence <= phase1_end)
+crime_data_phase2 <- up_dallas_post %>% filter(Date1.of.Occurrence >= phase2_start & Date1.of.Occurrence <= phase2_end)
+crime_data_phase3 <- up_dallas_post %>% filter(Date1.of.Occurrence >= phase3_start & Date1.of.Occurrence <= phase3_end)
+
+# Function to perform change point analysis
+perform_change_point_analysis <- function(up_dallas_post, phase_label) {
+  # Count crimes per day
+  crime_counts <- up_dallas_post %>%
+    group_by(Date1.of.Occurrence) %>%
+    summarise(Count = n())
+
+  # Create a time series
+  crime_ts <- ts(crime_counts$Count, frequency = 1, start = 1)
+
+  # Apply PELT algorithm for change point detection
+  cpt_result <- cpt.mean(crime_ts, method = "AMOC")
+  #cpt_result = cpt.mean(crime_ts, method = "PELT", Q = 3)
+
+  # Print summary
+  print(paste("Change Point Analysis -", phase_label))
+  print(summary(cpt_result))
+
+  # Plot time series with changepoints
+  plot(cpt_result, crime_ts, cpt.col = "red", xlab = "Date", ylab = "Count", main = paste("", phase_label))
+}
+
+# Perform change point analysis for each phase
+perform_change_point_analysis(crime_data_phase1, "Phase 1")
+perform_change_point_analysis(crime_data_phase2, "Phase 2")
+perform_change_point_analysis(crime_data_phase3, "Phase 3")
+
+```
+
+
+```{r}
+str(up_seattle_post)
+```
+
+
+
+
+
+```{r}
+# Convert 'Date' to Date format
+up_seattle_post$Offense.Start.DateTime <- as.Date(up_seattle_post$Offense.Start.DateTime)
+
+# Count crimes per day
+crime_counts <- up_seattle_post %>%
+  group_by(Offense.Start.DateTime) %>%
+  summarise(Count = n())
+
+# Plotting
+ggplot(crime_counts, aes(x = Offense.Start.DateTime, y = Count)) +
+  geom_line() +
+  labs(title = "",
+       x = "Date",
+       y = "Count") +
+  theme_minimal()
+
+# Step 2: Perform Change Point Analysis for each phase
+
+# Define the start and end dates for each phase
+phase1_start <- as.Date("2020-05-28")
+phase1_end <- as.Date("2020-08-10")
+#phase2_start <- as.Date("2020-05-29")
+#phase2_end <- as.Date("2020-09-19")
+phase3_start <- as.Date("2020-08-10")
+phase3_end <- as.Date("2023-08-29")
+
+# Subset the data for each phase
+crime_data_phase1 <- up_seattle_post %>% filter(Offense.Start.DateTime >= phase1_start & Offense.Start.DateTime <= phase1_end)
+#crime_data_phase2 <- up_seattle_post %>% filter(Offense.Start.DateTime >= phase2_start & Offense.Start.DateTime <= phase2_end)
+crime_data_phase3 <- up_seattle_post %>% filter(Offense.Start.DateTime >= phase3_start & Offense.Start.DateTime <= phase3_end)
+
+# Function to perform change point analysis
+perform_change_point_analysis <- function(up_seattle_post, phase_label) {
+  # Count crimes per day
+  crime_counts <- up_seattle_post %>%
+    group_by(Offense.Start.DateTime) %>%
+    summarise(Count = n())
+
+  # Create a time series
+  crime_ts <- ts(crime_counts$Count, frequency = 1, start = 1)
+
+  # Apply PELT algorithm for change point detection
+  cpt_result <- cpt.mean(crime_ts, method = "AMOC")
+
+  # Print summary
+  print(paste("Change Point Analysis -", phase_label))
+  print(summary(cpt_result))
+
+  # Plot time series with changepoints
+  plot(cpt_result, crime_ts, cpt.col = "red", xlab = "Date", ylab = "Count", main = paste("", phase_label))
+}
+
+# Perform change point analysis for each phase
+perform_change_point_analysis(crime_data_phase1, "Phase 1")
+#perform_change_point_analysis(crime_data_phase2, "Phase 2")
+perform_change_point_analysis(crime_data_phase3, "Phase 3")
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(changepoint)
+
+# Assuming your data frame is named 'crime_data'
+# If it's in a different format, adjust accordingly
+
+# Step 1: Create a time series plot of crime counts per day
+
+# Convert 'Date' to Date format
+up_seattle_post$Date1.of.Occurrence <- as.Date(up_seattle_post$Date1.of.Occurrence)
+
+# Count crimes per day
+crime_counts <- up_seattle_post %>%
+  group_by(Date1.of.Occurrence) %>%
+  summarise(Count = n())
+
+# Plotting
+ggplot(crime_counts, aes(x = Date1.of.Occurrence, y = Count)) +
+  geom_line() +
+  labs(title = "",
+       x = "Date",
+       y = "Count") +
+  theme_minimal()
+
+# Step 2: Perform Change Point Analysis for each phase
+
+# Define the start and end dates for each phase
+phase1_start <- as.Date("2020-03-15")
+phase1_end <- as.Date("2020-05-28")
+phase2_start <- as.Date("2020-05-29")
+phase2_end <- as.Date("2020-09-19")
+phase3_start <- as.Date("2020-09-20")
+phase3_end <- as.Date("2023-08-29")
+
+# Subset the data for each phase
+crime_data_phase1 <- up_seattle_post %>% filter(Date1.of.Occurrence >= phase1_start & Date1.of.Occurrence <= phase1_end)
+crime_data_phase2 <- up_seattle_post %>% filter(Date1.of.Occurrence >= phase2_start & Date1.of.Occurrence <= phase2_end)
+crime_data_phase3 <- up_seattle_post %>% filter(Date1.of.Occurrence >= phase3_start & Date1.of.Occurrence <= phase3_end)
+
+# Function to perform change point analysis
+perform_change_point_analysis <- function(up_seattle_post, phase_label) {
+  # Count crimes per day
+  crime_counts <- up_seattle_post %>%
+    group_by(Date1.of.Occurrence) %>%
+    summarise(Count = n())
+
+  # Create a time series
+  crime_ts <- ts(crime_counts$Count, frequency = 1, start = 1)
+
+  # Apply PELT algorithm for change point detection
+  cpt_result <- cpt.mean(crime_ts, method = "AMOC")
+  #cpt_result = cpt.mean(crime_ts, method = "PELT", Q = 3)
+
+  # Print summary
+  print(paste("Change Point Analysis -", phase_label))
+  print(summary(cpt_result))
+
+  # Plot time series with changepoints
+  plot(cpt_result, crime_ts, cpt.col = "red", xlab = "Date", ylab = "Count", main = paste("", phase_label))
+}
+
+# Perform change point analysis for each phase
+perform_change_point_analysis(crime_data_phase1, "Phase 1")
+perform_change_point_analysis(crime_data_phase2, "Phase 2")
+perform_change_point_analysis(crime_data_phase3, "Phase 3")
+
+```
+
+
+
+
+
+
+
+
+
+```{r}
+str(up_phoenix_post)
+```
+
+
+
+```{r}
+
+
+# Step 1: Create a time series plot of crime counts per day
+
+# Convert 'Date' to Date format
+up_phoenix_post$OCCURRED.ON <- as.Date(up_phoenix_post$OCCURRED.ON)
+
+# Count crimes per day
+crime_counts <- up_phoenix_post %>%
+  group_by(OCCURRED.ON) %>%
+  summarise(Count = n())
+
+# Plotting
+ggplot(crime_counts, aes(x = OCCURRED.ON, y = Count)) +
+  geom_line() +
+  labs(title = "",
+       x = "Date",
+       y = "Count") +
+  theme_minimal()
+
+# Step 2: Perform Change Point Analysis for each phase
+
+# Define the start and end dates for each phase
+phase1_start <- as.Date("2020-03-31")
+phase1_end <- as.Date("2020-06-28")
+phase2_start <- as.Date("2020-06-29")
+phase2_end <- as.Date("2020-09-02")
+phase3_start <- as.Date("2020-09-03")
+phase3_end <- as.Date("2023-08-29")
+
+# Subset the data for each phase
+crime_data_phase1 <- up_phoenix_post %>% filter(OCCURRED.ON >= phase1_start & OCCURRED.ON <= phase1_end)
+crime_data_phase2 <- up_phoenix_post %>% filter(OCCURRED.ON >= phase2_start & OCCURRED.ON <= phase2_end)
+crime_data_phase3 <- up_phoenix_post %>% filter(OCCURRED.ON >= phase3_start & OCCURRED.ON <= phase3_end)
+
+# Function to perform change point analysis
+perform_change_point_analysis <- function(up_phoenix_post, phase_label) {
+  # Count crimes per day
+  crime_counts <- up_phoenix_post %>%
+    group_by(OCCURRED.ON) %>%
+    summarise(Count = n())
+
+  # Create a time series
+  crime_ts <- ts(crime_counts$Count, frequency = 1, start = 1)
+
+  # Apply PELT algorithm for change point detection
+  cpt_result <- cpt.mean(crime_ts, method = "AMOC")
+  #cpt_result = cpt.mean(crime_ts, method = "PELT", Q = 3)
+
+  # Print summary
+  print(paste("Change Point Analysis -", phase_label))
+  print(summary(cpt_result))
+
+  # Plot time series with changepoints
+  plot(cpt_result, crime_ts, cpt.col = "red", xlab = "Date", ylab = "Count", main = paste("", phase_label))
+}
+
+# Perform change point analysis for each phase
+perform_change_point_analysis(crime_data_phase1, "Phase 1")
+perform_change_point_analysis(crime_data_phase2, "Phase 2")
+perform_change_point_analysis(crime_data_phase3, "Phase 3")
+
+```
+
+
+
+```{r}
+# Create a function that generates a color palette from red to white
+red_to_white_palette <- colorRampPalette(c("red", "white"))
+
+# Specify the number of colors you want in the palette
+num_colors <- 10
+
+# Generate the color scale
+color_scale <- red_to_white_palette(num_colors)
+
+# Print the generated color scale
+print(color_scale)
+
+# Plot a gradient using the generated colors
+image(matrix(1:num_colors, ncol = num_colors, nrow = 1),
+      col = color_scale, axes = FALSE, main = "Red to White Color Scale",
+      xlab = "", ylab = "")
+
+```
+

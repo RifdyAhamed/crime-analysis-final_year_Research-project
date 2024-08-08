@@ -1,0 +1,443 @@
+---
+title: "change_point_analysis"
+author: "S_17_305"
+date: "2023-12-30"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("changepoint")
+```
+```{r}
+library(changepoint)
+```
+```{r}
+library(tinytex)
+```
+
+
+```{r}
+library(ggmap)
+library(ggplot2)
+library(tibble)
+library(lubridate)
+library(chron)
+library(dplyr)
+library(tidyverse)
+library(sp)
+```
+
+
+
+
+```{r}
+chicago_pre = read.csv("./ChicagoCrimes_-_2001_to_Present.csv (2016-01-01 to 2019-12-31) rows_1068789.csv", header = TRUE)
+```
+
+
+
+```{r}
+chicago_post = read.csv("./ChicagoCrimes_-_2001_to_Present.csv (2020-01-01 to 2023-08-29) rows_828518.csv", header = TRUE)
+```
+
+
+
+
+```{r}
+p_chicago_pre = chicago_pre %>%
+  select(ID, Case.Number, Date , Time, Block, IUCR, Primary.Type, Description, Location.Description, Domestic, Community.Area, FBI.Code, X.Coordinate, Y.Coordinate, Latitude, Longitude, Location, Zip.Codes)
+head(p_chicago_pre,10)
+```
+
+```{r}
+p_chicago_post  = chicago_post %>%
+  select(ID, Case.Number, Date , Time, Block, IUCR, Primary.Type, Description, Location.Description, Domestic, Community.Area, FBI.Code, X.Coordinate, Y.Coordinate, Latitude, Longitude, Location, Zip.Codes)
+head(p_chicago_post,10)
+```
+
+
+
+```{r}
+str(p_chicago_post)
+```
+
+
+
+
+
+
+
+```{r}
+# Assuming your crime_data data frame is loaded and you have the required packages installed
+
+# Convert Date to Time Series
+p_chicago_post$Date <- as.Date(p_chicago_post$Date)
+p_chicago_post <- p_chicago_post[order(p_chicago_post$Date), ]  # Make sure data is sorted by date
+
+# Convert Date to numeric
+numeric_dates <- as.numeric(p_chicago_post$Date)
+
+# Create a time series
+crime_ts <- ts(1:length(numeric_dates), frequency = 1, start = 1)
+
+# Define the start and end dates for each phase
+# ... (as in the previous code)
+
+phase1_start <- as.Date("2020-03-03")
+phase1_end <- as.Date("2020-06-02")
+phase2_start <- as.Date("2020-06-03")
+phase2_end <- as.Date("2021-03-01")
+phase3_start <- as.Date("2021-03-02")
+phase3_end <- as.Date("2023-08-29")
+
+
+
+# Subset for each phase
+crime_ts_phase1 <- window(crime_ts, start = as.numeric(phase1_start), end = as.numeric(phase1_end))
+crime_ts_phase2 <- window(crime_ts, start = as.numeric(phase2_start), end = as.numeric(phase2_end))
+crime_ts_phase3 <- window(crime_ts, start = as.numeric(phase3_start), end = as.numeric(phase3_end))
+
+# Apply PELT algorithm for each phase
+cpt_result_phase1 <- cpt.mean(crime_ts_phase1, method = "PELT")
+cpt_result_phase2 <- cpt.mean(crime_ts_phase2, method = "PELT")
+cpt_result_phase3 <- cpt.mean(crime_ts_phase3, method = "PELT")
+
+# Visualize Results for Each Phase
+# ... (as in the previous code)
+
+```
+
+
+
+```{r}
+
+p_chicago_post$Date <- as.Date(p_chicago_post$Date)
+
+
+# Plot the time series with change points for each phase
+par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
+plot(crime_ts_phase1, main = "Crime Time Series - Phase 1", xlab = "Date", ylab = "Count")
+abline(v = index(cpt_result_phase1), col = "red", lty = 2)
+
+plot(crime_ts_phase2, main = "Crime Time Series - Phase 2", xlab = "Date", ylab = "Count")
+abline(v = index(cpt_result_phase2), col = "red", lty = 2)
+
+plot(crime_ts_phase3, main = "Crime Time Series - Phase 3", xlab = "Date", ylab = "Count")
+abline(v = index(cpt_result_phase3), col = "red", lty = 2)
+
+```
+
+
+```{r}
+cpt_result_phase1
+cpt_result_phase2
+cpt_result_phase3
+
+```
+
+
+```{r}
+summary(cpt_result_phase1)
+summary(cpt_result_phase2)
+summary(cpt_result_phase3)
+
+```
+
+
+
+```{r}
+# Assuming you have the necessary data and results from the changepoint analysis
+
+# Convert Date to numeric for plotting
+numeric_dates_phase1 <- as.numeric(time(crime_ts_phase1))
+numeric_dates_phase2 <- as.numeric(time(crime_ts_phase2))
+numeric_dates_phase3 <- as.numeric(time(crime_ts_phase3))
+
+# Visualize Results for Each Phase
+par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
+
+# Phase 1
+plot(crime_ts_phase1, main = "Crime Time Series - Phase 1", xlab = "Date", ylab = "Count", type = "l")
+abline(v = numeric_dates_phase1[cpt_result_phase1@cpts], col = "red", lty = 2)
+axis(1, at = numeric_dates_phase1, labels = as.character(time(crime_ts_phase1)), cex.axis = 0.7, las = 2)
+
+# Phase 2
+plot(crime_ts_phase2, main = "Crime Time Series - Phase 2", xlab = "Date", ylab = "Count", type = "l")
+abline(v = numeric_dates_phase2[cpt_result_phase2@cpts], col = "red", lty = 2)
+axis(1, at = numeric_dates_phase2, labels = as.character(time(crime_ts_phase2)), cex.axis = 0.7, las = 2)
+
+# Phase 3
+plot(crime_ts_phase3, main = "Crime Time Series - Phase 3", xlab = "Date", ylab = "Count", type = "l")
+abline(v = numeric_dates_phase3[cpt_result_phase3@cpts], col = "red", lty = 2)
+axis(1, at = numeric_dates_phase3, labels = as.character(time(crime_ts_phase3)), cex.axis = 0.7, las = 2)
+
+
+```
+
+
+```{r}
+# Assuming you have the necessary data and results from the changepoint analysis
+
+# Convert Date to numeric for plotting
+numeric_dates_phase1 <- as.numeric(time(crime_ts_phase1))
+numeric_dates_phase2 <- as.numeric(time(crime_ts_phase2))
+numeric_dates_phase3 <- as.numeric(time(crime_ts_phase3))
+
+# Visualize Results for Each Phase
+par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
+
+# Function to plot time series with changepoints highlighted
+plot_with_changepoints <- function(crime_ts, numeric_dates, cpt_result, main_title) {
+  plot(crime_ts, main = main_title, xlab = "Date", ylab = "Count", type = "l")
+  changepoint_dates <- numeric_dates[cpt_result@cpts]
+  abline(v = changepoint_dates, col = "red", lty = 2)
+  axis(1, at = numeric_dates, labels = as.character(time(crime_ts)), cex.axis = 0.7, las = 2)
+  text(changepoint_dates, par("usr")[3], labels = as.character(time(changepoint_dates)), srt = 45, adj = c(1, 0), col = "blue", xpd = TRUE)
+}
+
+# Phase 1
+plot_with_changepoints(crime_ts_phase1, numeric_dates_phase1, cpt_result_phase1, "Crime Time Series - Phase 1")
+
+# Phase 2
+plot_with_changepoints(crime_ts_phase2, numeric_dates_phase2, cpt_result_phase2, "Crime Time Series - Phase 2")
+
+# Phase 3
+plot_with_changepoints(crime_ts_phase3, numeric_dates_phase3, cpt_result_phase3, "Crime Time Series - Phase 3")
+
+```
+
+
+
+```{r}
+library(dplyr)
+```
+
+
+
+
+```{r}
+install.packages("bcp")
+```
+
+
+
+```{r}
+# Assuming you have loaded the necessary libraries
+library(dplyr)
+library(ggplot2)
+library(changepoint)
+
+# Assuming your data frame is named 'crime_data'
+# If it's in a different format, adjust accordingly
+
+# Step 1: Create a time series plot of crime counts per day
+
+# Convert 'Date' to Date format
+p_chicago_post$Date <- as.Date(p_chicago_post$Date)
+
+# Count crimes per day
+crime_counts <- p_chicago_post %>%
+  group_by(Date) %>%
+  summarise(Count = n())
+
+# Plotting
+ggplot(crime_counts, aes(x = Date, y = Count)) +
+  geom_line() +
+  labs(title = "Crime Counts per Day",
+       x = "Date",
+       y = "Count") +
+  theme_minimal()
+
+# Step 2: Perform Change Point Analysis for each phase
+
+# Define the start and end dates for each phase
+phase1_start <- as.Date("2020-03-03")
+phase1_end <- as.Date("2020-06-02")
+phase2_start <- as.Date("2020-06-03")
+phase2_end <- as.Date("2021-03-01")
+phase3_start <- as.Date("2021-03-02")
+phase3_end <- as.Date("2023-08-29")
+
+# Subset the data for each phase
+crime_data_phase1 <- p_chicago_post %>% filter(Date >= phase1_start & Date <= phase1_end)
+crime_data_phase2 <- p_chicago_post %>% filter(Date >= phase2_start & Date <= phase2_end)
+crime_data_phase3 <- p_chicago_post %>% filter(Date >= phase3_start & Date <= phase3_end)
+
+# Function to perform change point analysis
+perform_change_point_analysis <- function(p_chicago_post, phase_label) {
+  # Count crimes per day
+  crime_counts <- p_chicago_post %>%
+    group_by(Date) %>%
+    summarise(Count = n())
+
+  # Create a time series
+  crime_ts <- ts(crime_counts$Count, frequency = 1, start = 1)
+
+  # Apply PELT algorithm for change point detection
+  cpt_result <- cpt.mean(crime_ts, method = "PELT")
+
+  # Print summary
+  print(paste("Change Point Analysis -", phase_label))
+  print(summary(cpt_result))
+
+  # Plot time series with changepoints
+  plot(cpt_result, crime_ts, cpt.col = "red", xlab = "Date", ylab = "Count", main = paste("Crime Counts per Day -", phase_label))
+}
+
+# Perform change point analysis for each phase
+perform_change_point_analysis(crime_data_phase1, "Phase 1")
+perform_change_point_analysis(crime_data_phase2, "Phase 2")
+perform_change_point_analysis(crime_data_phase3, "Phase 3")
+
+
+
+```
+
+
+
+```{r}
+
+
+# Assuming your data frame is named 'p_chicago_post'
+# If it's in a different format, adjust accordingly
+
+# Function to perform change point analysis and plot
+perform_change_point_analysis <- function(p_chicago_post, phase_label) {
+  # Convert 'Date' to Date format
+  p_chicago_post$Date <- as.Date(p_chicago_post$Date)
+
+  # Count crimes per day
+  crime_counts <- p_chicago_post %>%
+    group_by(Date) %>%
+    summarise(Count = n())
+
+  # Create a time series
+  crime_ts <- ts(crime_counts$Count, frequency = 1, start = 1)
+
+  # Apply PELT algorithm for change point detection
+  cpt_result <- cpt.mean(crime_ts, method = "PELT")
+
+  # Print summary
+  print(paste("Change Point Analysis -", phase_label))
+  print(summary(cpt_result))
+
+  # Plot time series with changepoints
+  p <- plot(cpt_result, crime_ts, cpt.col = "red", xlab = "Date", ylab = "Count", main = paste("Crime Counts per Day -", phase_label))
+
+  # Add vertical lines at changepoints
+  changepoints <- attr(cpt_result, "cpts")
+  for (cp in changepoints) {
+    abline(v = cp, col = "blue", lty = 2)
+  }
+
+  return(p)  # Return the plot object for further customization or saving
+}
+
+# Define the start and end dates for each phase
+phase1_start <- as.Date("2020-03-03")
+phase1_end <- as.Date("2020-06-02")
+phase2_start <- as.Date("2020-06-03")
+phase2_end <- as.Date("2021-03-01")
+phase3_start <- as.Date("2021-03-02")
+phase3_end <- as.Date("2023-08-29")
+
+# Subset the data for each phase
+crime_data_phase1 <- p_chicago_post %>% filter(Date >= phase1_start & Date <= phase1_end)
+crime_data_phase2 <- p_chicago_post %>% filter(Date >= phase2_start & Date <= phase2_end)
+crime_data_phase3 <- p_chicago_post %>% filter(Date >= phase3_start & Date <= phase3_end)
+
+# Perform change point analysis and plot for each phase
+plot_phase1 <- perform_change_point_analysis(crime_data_phase1, "Phase 1")
+plot_phase2 <- perform_change_point_analysis(crime_data_phase2, "Phase 2")
+plot_phase3 <- perform_change_point_analysis(crime_data_phase3, "Phase 3")
+
+
+```
+
+
+
+```{r}
+# Function to perform change point analysis and plot with significant changepoints
+perform_change_point_analysis <- function(p_chicago_post, phase_label, significance_threshold = -0.5) {
+  # Convert 'Date' to Date format
+  p_chicago_post$Date <- as.Date(p_chicago_post$Date)
+
+  # Count crimes per day
+  crime_counts <- p_chicago_post %>%
+    group_by(Date) %>%
+    summarise(Count = n())
+
+  # Check if there are observations
+  if (nrow(crime_counts) == 0) {
+    stop("No observations for creating a time series.")
+  }
+
+  # Create a time series
+  crime_ts <- ts(crime_counts$Count, frequency = 1, start = 1)
+
+  # Apply PELT algorithm for change point detection
+  cpt_result <- cpt.mean(crime_ts, method = "PELT")
+
+  # Extract test statistics for each changepoint
+  test_stats <- cpt_result@test.stat
+
+  # Identify significant changepoints based on the significance threshold
+  significant_changepoints <- which(test_stats > significance_threshold)
+
+  # Identify mean values for each segment
+  segment_means <- sapply(significant_changepoints, function(cp) mean(crime_ts[(cp - 1):cp]))
+
+  # Identify changepoints with higher mean values
+  high_mean_changepoints <- significant_changepoints[segment_means > max(segment_means) * 0.8]  # Adjust the threshold as needed
+
+  # Print summary
+  print(paste("Change Point Analysis -", phase_label))
+  print(summary(cpt_result))
+
+  # Plot time series with significant changepoints
+  p <- plot(cpt_result, crime_ts, cpt.col = "red", xlab = "Date", ylab = "Count", main = paste("Crime Counts per Day -", phase_label))
+
+  # Add vertical lines at significant changepoints with higher mean values
+  for (cp in high_mean_changepoints) {
+    abline(v = cp, col = "blue", lty = 2)
+  }
+
+  return(p)  # Return the plot object for further customization or saving
+}
+
+# ...
+
+# Perform change point analysis and plot for each phase
+plot_phase1 <- perform_change_point_analysis(crime_data_phase1, "Phase 1")
+plot_phase2 <- perform_change_point_analysis(crime_data_phase2, "Phase 2")
+plot_phase3 <- perform_change_point_analysis(crime_data_phase3, "Phase 3")
+
+```
+
+
+
+
+
+
+
+```{r}
+# Assuming you have performed changepoint analysis for each phase
+# cpt_result_phase1, cpt_result_phase2, cpt_result_phase3
+
+# Plotting code for Phase 1 with changepoints
+plot_with_changepoints(crime_ts_phase1, numeric_dates_phase1, cpt_result_phase1, "Crime Counts - Phase 1")
+
+# Plotting code for Phase 2 with changepoints
+plot_with_changepoints(crime_ts_phase2, numeric_dates_phase2, cpt_result_phase2, "Crime Counts - Phase 2")
+
+# Plotting code for Phase 3 with changepoints
+plot_with_changepoints(crime_ts_phase3, numeric_dates_phase3, cpt_result_phase3, "Crime Counts - Phase 3")
+
+```
+
